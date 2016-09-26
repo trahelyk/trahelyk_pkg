@@ -1,38 +1,42 @@
-library(DT)
-
-md.table <- function(dataset, out.type="", filter_opt = 'none', rownames=FALSE, cap="", footer="") {
-  if (out.type == "html") {
-    out.table <- DT::datatable(dataset, 
-                               filter = filter_opt, 
-                               rownames=rownames,
-                               caption = cap,
-                               # caption = htmltools::tags$caption(
-                               #   style = 'caption-side: bottom; text-align: left;',
-                               #   htmltools::em(footer)),
-                               escape = FALSE)
+# -------------------------------------------------------------------------------- 
+# Define function for robust Shapiro-Wilks test, despite David's advice against 
+# doing this
+# -------------------------------------------------------------------------------- 
+sw.test.robust <- function(x, max.ssize = 100, num.tests = 50) {
+  if(length(x) <= max.ssize) {
+    pval <- shapiro.test(x)$p.value
   } else {
-    out.table <- knitr::kable(dataset,
-                              row.names = FALSE,
-                              booktabs = TRUE)
+    psum <- 0
+    for(i in 1:num.tests) {
+      psum <- psum + shapiro.test(head(x[order(runif(length(x)))], max.ssize))$p.value
+    }
+    pval <- psum/num.tests
   }
-  return(out.table)
+  return(pval)
 }
 
+# -------------------------------------------------------------------------------- 
+# Generate new class to hold the return object, comprising a tidy data frame
+# for the summary statistics and a character vector that contains definitions
+# of displays of summary statistics in the main table and a list of methods
+# used to test for differences across groups in each variable.
+# -------------------------------------------------------------------------------- 
+tableone <- function(table, footer, caption, label) {
+  if (!is.data.frame(table) | !is.vector(footer) | 
+      !is.character(caption) | !is.character(label)) {
+    stop("Wrong data type(s) passed to constructor.")
+  }
+  structure(list(table=table, 
+                 footer=footer,
+                 caption=caption,
+                 label=label), class = "tableone")
+}
 
-md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", lab="", size="footnotesize", inc.hist=FALSE, spacing=700, fisher.simulate.p=FALSE, out.type="") {
-  # df = rbc
-  # grpvar = "rbc.old"
-  # testTypes=NULL
-  # d=1
-  # p.digits=3
-  # cap=""
-  # lab=""
-  # size="footnotesize"
-  # inc.hist=FALSE
-  # spacing=700
-  # fisher.simulate.p=FALSE
-  # i <- 5
-  # j <- 1
+# -------------------------------------------------------------------------------- 
+# Define a function that produces a tableone object.
+# -------------------------------------------------------------------------------- 
+tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, lbl="", caption="") {
+  if (lbl=="") lbl <- an.id(9)
   
   # If the user specified a list of test types of valid length for continuous data, use them; otherwise, set all to "auto".
   if(length(testTypes)!=length(colnames(df))) {
@@ -44,7 +48,7 @@ md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", la
                         stringsAsFactors = FALSE)
   
   # Create the table, beginning with an empty data frame
-  out <- new.df(cols=8)
+  out <- new.df(cols=7)
   for (i in 1:(length(colnames(df))-1)) {  
     # Identify the variable to summarize for the current iteration
     sumvar <- colnames(df)[!(colnames(df) %in% grpvar)][i]
@@ -70,17 +74,16 @@ md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", la
         newrow <- data.frame(cbind(label(df[[sumvar]]),
                                    sum(!is.na(df[[sumvar]])),
                                    paste0(rnd(mean(df[df[[grpvar]]==levels(df[[grpvar]])[1], c(sumvar)], na.rm=TRUE), d=d), 
-                                          " ± ", 
+                                          " +/- ", 
                                           rnd(sd(df[df[[grpvar]]==levels(df[[grpvar]])[1], c(sumvar)], na.rm=TRUE), d=d)),
                                    paste0(rnd(mean(df[df[[grpvar]]==levels(df[[grpvar]])[2], c(sumvar)], na.rm=TRUE), d=d), 
-                                          " ± ", 
+                                          " +/- ", 
                                           rnd(sd(df[df[[grpvar]]==levels(df[[grpvar]])[2], c(sumvar)], na.rm=TRUE), d=d)),
                                    paste0(rnd(mean(df[, c(sumvar)], na.rm=TRUE), d=d), 
-                                          " ± ", 
+                                          " +/- ", 
                                           rnd(sd(df[, c(sumvar)], na.rm=TRUE), d=d)),
                                    paste0(fmt.pval(test$p.value, include.p=FALSE, latex=FALSE, digits=p.digits), ""),
-                                   method,
-                                   inline.hist(df[[sumvar]], spacing)))
+                                   method))
         names(newrow) <- names(out)
         out <- rbind(out, newrow)
       } else {
@@ -121,8 +124,7 @@ md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", la
                                           rnd(quantile(df[, c(sumvar)], 0.75, na.rm=TRUE), d=d),
                                           ")"),
                                    wc.pval,
-                                   method,
-                                   inline.hist(df[[sumvar]], spacing)))
+                                   method))
         names(newrow) <- names(out)
         out <- rbind(out, newrow)
       }
@@ -181,8 +183,7 @@ md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", la
                                  " ",
                                  " ",
                                  pval,
-                                 method,
-                                 " "))
+                                 method))
       names(newrow) <- names(out)
       out <- rbind(out, newrow)
       
@@ -195,12 +196,12 @@ md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", la
       
       method <- ""
       for (j in 1:nrow(tb)) {
-        newrow <- data.frame(cbind(paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", level.labs[j]),
+        newrow <- data.frame(cbind(paste0(" - ", level.labs[j]),
                                    " ",
                                    paste0(fmt.pct(tb[j,1]/sum(tb[,1]), latex=FALSE), " (", tb[j,1], ")"),
                                    paste0(fmt.pct(tb[j,2]/sum(tb[,2]), latex=FALSE), " (", tb[j,2], ")"),
                                    paste0(fmt.pct(sum(tb[j,])/sum(tb[,]), latex=FALSE), " (", sum(tb[j,]), ")"),
-                                   "　", method, " "))
+                                   " ", method))
         names(newrow) <- names(out)
         out <- rbind(out, newrow)
       }
@@ -212,11 +213,11 @@ md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", la
     out[,l] <- as.character(out[,l])
   }
   
-  colnames(out) <- c("var.name", "n", "grp1", "grp2", "combined", "p", "method.name", "histogram")
+  colnames(out) <- c(" ", "n", levels(df[[grpvar]])[1], levels(df[[grpvar]])[2], "Combined", "p", "method.name")
   
-  # Insert subscripts to identify methods used
+  # Identify methods used
   methods.used <- data.frame(method.name = unique(out$method.name[out$method.name!=""]),
-                             subscript = letters[seq(1:length(unique(out$method.name[out$method.name!=""])))],
+                             method = letters[seq(1:length(unique(out$method.name[out$method.name!=""])))],
                              stringsAsFactors = FALSE)
   out$sort <- seq(1:nrow(out))
   out <- merge(out, methods.used,
@@ -224,64 +225,32 @@ md.table.one <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, cap="", la
                all.x=TRUE)
   out <- out[order(out$sort),]
   out$sort <- NULL
-  out$subscript[is.na(out$subscript)] <- ""
-  out$p <- paste0(out$p, " <sup>", out$subscript, "</sup>")
+  out$method[is.na(out$method)] <- ""
   out$method.name <- NULL
-  out$subscript <- NULL
-  out$p[out$p=="　 <sup></sup>"] <- " "
-  out$p[out$p==". <sup></sup>"] <- "."
-  # Replace NaN% with 0%
-  out$grp1 <- gsub(pattern="NaN", 
-                   replacement="0",
-                   x=out$grp1)
-  out$grp2 <- gsub(pattern="NaN", 
-                   replacement="0",
-                   x=out$grp2)
   
-  if(!inc.hist) {
-    out <- out[,1:6]
-    col.cnt <- 6
-    colnames(out) <- c(" ", "N", levels(df[[grpvar]])[1], levels(df[[grpvar]])[2], "Combined", "p-value")
-  } else {
-    col.cnt <- 7
-    colnames(out) <- c(" ", "N", levels(df[[grpvar]])[1], levels(df[[grpvar]])[2], "Combined", "p-value", "Histogram")
-  }
+  # Replace NaN% with 0%
+  out[[levels(df[[grpvar]])[1]]] <- gsub(pattern="NaN", 
+                                         replacement="0",
+                                         x=out[[levels(df[[grpvar]])[1]]])
+  out[[levels(df[[grpvar]])[1]]] <- gsub(pattern="NaN", 
+                                         replacement="0",
+                                         x=out[[levels(df[[grpvar]])[1]]])
   
   # Generate footer
-  footer <- ""
+  footer <- c()
   if("Wilcoxon rank-sum test with continuity correction" %in% methods.used$method.name) {
-    footer <- paste0(footer, "x.x (x.x, x.x) indicates median and inter-quartile range.<br>")
+    footer <- c(footer, "x.x (x.x, x.x) indicates median and inter-quartile range.")
   } 
   if("Student's t-test (two-sided)" %in% methods.used$method.name) {
-    footer <- paste0(footer, "x ± x indicates mean ± standard deviation.<br>")
+    footer <- c(footer, "x +/- x indicates mean +/- standard deviation.")
   }
   for(k in 1:nrow(methods.used)) {
-    footer <- paste0(footer, "<sup>", methods.used$subscript[k], "</sup>", methods.used$method.name[k], "<br>")
+    footer <- c(footer, paste0("(", methods.used$method[k], ") ", methods.used$method.name[k]))
   }
   
-  xt.out <- xtable(out, caption=footer, digits=d, label=NULL)
-  align(xt.out) <- paste0("ll", paste(rep("r", col.cnt-1), collapse=""))
-  
-  # Configure header and footer  
-  addtorow <- list()
-  addtorow$pos <- list(nrow(out))
-  addtorow$command <- c(footer)
-  
-  # Print the table
-  print(xt.out,
-        type="html",
-        include.rownames=FALSE,
-        caption.placement="bottom",
-        floating=TRUE,
-        table.placement="H",
-        size=size,
-        booktabs=TRUE,
-        # add.to.row=addtorow,
-        hline.after=c(-1, 0),
-        width=50,
-        html.table.attributes="frame=hsides",
-        sanitize.text.function = identity)
+  return(tableone(table = out,
+                  footer = footer,
+                  label = lbl,
+                  caption = caption))
 }
 
-# md.table.one(rbc,
-#              grpvar = "rbc.old")

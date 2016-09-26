@@ -100,14 +100,12 @@ laglead<-function(x,shift_by){
   out
 }
 
-
-
 #Apply lables to a dataframe
-apply.labels <- function(df, labels) {
-  for(i in 1:length(df)) {
-    label(df[[i]]) <- labels[i]
+`apply.labels<-` <- function(x, value) {
+  for(i in 1:length(x)) {
+    label(x[[i]]) <- value[i]
   }
-  return(df)
+  x
 }
 
 #Cross-tabulation for latex output
@@ -260,25 +258,29 @@ rnd <- function(x,d=3,as.numeric=FALSE) {
 # Returns a character-formatted version of a p-value, including LaTeX markup
 # to indicate when p is less than the minimum value in the specified number
 # of decimal-place digits.
-fmt.pval <- function(pval, digits=2, include.p=TRUE, latex=TRUE) {
+fmt.pval <- function(pval, digits=2, include.p=TRUE, latex=TRUE, md=FALSE) {
   p.df <- as.data.frame(cbind(1:length(pval), pval))
   colnames(p.df) <- c("order", "p")
   if(latex) {
     lt <- "\\textless"
-  }
-  else{
+  } else {
     lt <- "<"
   }
+  if(md) {
+    spc <- "\ "
+  } else {
+    spc <- " "
+  }
   if(include.p) {
-    prefix.1 <- paste0("p ",lt)
-    prefix.2 <- "p ="
+    prefix.1 <- paste0("p", spc, lt, spc)
+    prefix.2 <- paste0("p", spc, "=", spc)
   }
   else{
     prefix.1 <- lt
     prefix.2 <- ""
   }
-  p.df[p.df$p*(10^(digits)) < 1 & !is.na(p.df$p),c("p.fmt")] <- paste(prefix.1, as.character(1/(10^digits)))
-  p.df[p.df$p*(10^(digits)) >= 1 & !is.na(p.df$p),c("p.fmt")] <- paste(prefix.2, 
+  p.df[p.df$p*(10^(digits)) < 1 & !is.na(p.df$p),c("p.fmt")] <- paste0(prefix.1, as.character(1/(10^digits)))
+  p.df[p.df$p*(10^(digits)) >= 1 & !is.na(p.df$p),c("p.fmt")] <- paste0(prefix.2, 
                                                                        as.character(rnd(p.df$p[p.df$p*(10^(digits)) >= 1 & !is.na(p.df$p)],digits)))
   p.df[is.na(p.df$p),c("p.fmt")] <- ""
   
@@ -874,3 +876,9 @@ fix.mixed.dates <- function(dates) {
   return(c(short,long))
 }
 
+##################################################################################################
+# Generate a random alphanumeric string of length n. These are not necessarily unique.
+##################################################################################################
+an.id <- function(n) {
+  return(paste(replicate(n, c(letters, round(runif(26,0,9)))[round(runif(1,1,52))]), collapse=""))
+}
