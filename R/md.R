@@ -29,7 +29,11 @@ md.tableone <- function(x) {
   }
   
   # Bold the table headers in markdown.
-  colnames(x$table)[2:6] <- paste0("**", colnames(x$table)[2:6], "**") 
+  colnames(x$table)[c(2,6)] <- paste0("**", colnames(x$table)[c(2,6)], "**") 
+  colnames(x$table)[3] <- paste0("**", colnames(x$table)[3], " (n=", x$n$n.grp1, ")**")
+  colnames(x$table)[4] <- paste0("**", colnames(x$table)[4], " (n=", x$n$n.grp2, ")**")
+  colnames(x$table)[5] <- paste0("**", colnames(x$table)[5], " (n=", x$n$n.combined, ")**")
+  # colnames(x$table)[4:5] <- paste0("**", colnames(x$table)[3:5], " (n=", x$ "**")
   
   # Reformat the footer for markdown.
   for(l in letters[1:10]) {
@@ -49,4 +53,11 @@ md.tableone <- function(x) {
   # Print the footer.
   cat("\n***\n", x$footer, sep="\n\n")
   cat("<br><br><br>")
+}
+
+md.tbl_df <- function(x, row.names=FALSE) {
+  print(kable(x,
+              format = "markdown",
+              row.names = row.names))
+  cat("\n\n")
 }

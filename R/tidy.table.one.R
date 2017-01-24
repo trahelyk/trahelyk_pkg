@@ -21,12 +21,13 @@ sw.test.robust <- function(x, max.ssize = 100, num.tests = 50) {
 # of displays of summary statistics in the main table and a list of methods
 # used to test for differences across groups in each variable.
 # -------------------------------------------------------------------------------- 
-tableone <- function(table, footer, caption, label) {
-  if (!is.data.frame(table) | !is.vector(footer) | 
+tableone <- function(table, n, footer, caption, label) {
+  if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
       !is.character(caption) | !is.character(label)) {
     stop("Wrong data type(s) passed to constructor.")
   }
   structure(list(table=table, 
+                 n=n,
                  footer=footer,
                  caption=caption,
                  label=label), class = "tableone")
@@ -36,6 +37,8 @@ tableone <- function(table, footer, caption, label) {
 # Define a function that produces a tableone object.
 # -------------------------------------------------------------------------------- 
 tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, lbl="", caption="") {
+  df <- as.data.frame(df)
+  
   if (lbl=="") lbl <- an.id(9)
   
   # If the user specified a list of test types of valid length for continuous data, use them; otherwise, set all to "auto".
@@ -49,7 +52,7 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
   
   # Create the table, beginning with an empty data frame
   out <- new.df(cols=7)
-  for (i in 1:(length(colnames(df))-1)) {  
+  for (i in seq_along(cols.except(df, grpvar))) {  
     # Identify the variable to summarize for the current iteration
     sumvar <- colnames(df)[!(colnames(df) %in% grpvar)][i]
     
@@ -248,9 +251,15 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
     footer <- c(footer, paste0("(", methods.used$method[k], ") ", methods.used$method.name[k]))
   }
   
+  # Calculate n for each group
+  n <- list(n.grp1 = nrow(df[df[[grpvar]]==levels(df[[grpvar]])[1],]),
+            n.grp2 = nrow(df[df[[grpvar]]==levels(df[[grpvar]])[2],]),
+            n.combined = nrow(df[!is.na(df[[grpvar]]),]))
+  
   return(tableone(table = out,
+                  n = n,
                   footer = footer,
-                  label = lbl,
-                  caption = caption))
+                  caption = caption,
+                  label = lbl))
 }
 

@@ -18,6 +18,11 @@ not.in <- function(newlist, df) {
   return(newlist[!(newlist %in% colnames(df))])
 }
 
+# Return all the column names of a data frame except for those specified
+cols.except <- function(df, except) {
+  colnames(df)[!(colnames(df) %in% except)]
+}
+
 # Generate a new empty data fram with the specified number of columns.
 new.df <- function(cols) {
   data.frame(matrix(vector(), 
@@ -100,67 +105,44 @@ laglead<-function(x,shift_by){
   out
 }
 
+
 #Apply lables to a dataframe
-`apply.labels<-` <- function(x, value) {
-  for(i in 1:length(x)) {
-    label(x[[i]]) <- value[i]
+apply.labels <- function(df, labels) {
+  for(i in 1:length(df)) {
+    label(df[[i]]) <- labels[i]
   }
-  x
+  return(df)
 }
 
-#Cross-tabulation for latex output
-# crossTab <- function(x,y, df, caption, label, catTest = catTestFisher) {
-#   latex(summary(formula(paste0(y, "~ .")),
-#                 data = df[,c(x,y)],
-#                 method = "reverse",
-#                 continuous = 7,
-#                 catTest = catTest,
-#                 p.simulate = p.simulate,
-#                 test = TRUE,
-#                 overall = TRUE),
-#         prmsd=FALSE,
-#         digits = 3,
-#         exclude1 = FALSE,
-#         long = FALSE,
-#         size = "footnotesize",
-#         longtable = TRUE,
-#         lines.page = Inf,
-#         caption = caption,
-#         prtest = "P",
-#         label = label,
-#         file = "")
-# }
-
-
 ################################################################################################################################
-crossTab <- function(x, y, xlab="", ylab="", x.names=NA, y.names=NA, caption="", label="", size="footnotesize") {
-  # x.names <- y.names <- NA
-  # y <- ln$inst.recat
-  # x <- ln$dn.harvested
-  # ylab <- "PSLNs harvested"
-  # xlab <- "site"
-  if(is.na(x.names)) {
+crossTab <- function(x, y, xlab="X", ylab="Y", x.names=NULL, y.names=NULL, caption="", label="") {
+  if(is.null(x.names)) {
     x.names <- names(table(x))
   }
-  if(is.na(y.names)) {
+  if(is.null(y.names)) {
     y.names <- names(table(y))
   }
   tab <- table(x, y)
   
   out <- new.df(cols=length(names(table(y)))+2)
   # names(out) <- c(xlab, y.names, "~")
-  out <- rbind.data.frame(out, c(xlab, y.names, "~"))
+  out <- rbind.data.frame(out, c(xlab, y.names, " "))
   
   for (i in 1:(length(x.names))) {  
     newcol.txt <- ""
     rowsum <- 0
     for (j in 1:length(y.names)) {
-      newcol.txt <- paste0(newcol.txt, ", tab[", i, ", ", j, "]")
+      newcol.txt <- paste0(newcol.txt, ", as.character(tab[", i, ", ", j, "])")
       rowsum <- rowsum + tab[i,j]
     }
-    eval(parse(text=paste0("newrow <- data.frame(cbind(x.names[i]", newcol.txt, ", rowsum))")))
+    eval(parse(text=paste0("newrow <- data.frame(cbind(x.names[i]", newcol.txt, ", rowsum), stringsAsFactors=FALSE)")))
     names(newrow) <- names(out)
     out <- rbind(out, newrow)
+  }
+  
+  # Convert from factors to character vectors
+  for(colname in colnames(out)) {
+    out[[colname]] <- as.character(out[[colname]])
   }
   
   # Calculate colsums
@@ -174,7 +156,7 @@ crossTab <- function(x, y, xlab="", ylab="", x.names=NA, y.names=NA, caption="",
     colsums.txt <- paste0(colsums.txt, ", ", colsum)
     grandtotal <- grandtotal + colsum
   }
-  eval(parse(text=paste0("newrow <- data.frame(cbind('~'", colsums.txt, ", ", grandtotal, "))")))
+  eval(parse(text=paste0("newrow <- data.frame(cbind(' '", colsums.txt, ", ", grandtotal, "))")))
   names(newrow) <- names(out)
   out <- rbind(out, newrow)
   
@@ -182,35 +164,19 @@ crossTab <- function(x, y, xlab="", ylab="", x.names=NA, y.names=NA, caption="",
   for(i in 2:(length(x.names)+2)) {
     for(j in 2:(length(y.names)+1)) {
       out[i,j] <- paste0(out[i,j], " (", 
-                         fmt.pct(as.numeric(out[i,j])/as.numeric(out[i,length(y.names)+2]), d=2, latex=TRUE), ")")
+                         fmt.pct(as.numeric(as.character(out[i,j]))/as.numeric(as.character(out[i,length(y.names)+2])), 
+                                 d=2, latex=FALSE), ")")
     }
   }
   
-  # Generate the xtable object
-  xt.out <- xtable(out, caption=caption, label=label)
-  align(xt.out) <- paste0("ll", paste(rep("r", length(y.names)+1), collapse=""))
+  # Move first row to colnames
+  colnames(out) <- out[1,]
+  out <- out[2:nrow(out),]
   
-  # Configure the header
-  addtorow <- list()
-  addtorow$pos <- list(0)
-  addtorow$command <- c(paste0("~ & \\multicolumn{", ncol(out)-2, "}{c}{{\\bf ", ylab, "}} & ~ \\\\\n"))
-  
-  # Print the table
-  print(xt.out,
-        include.rownames=FALSE,
-        include.colnames=FALSE,
-        caption.placement="top",
-        floating=TRUE,
-        table.placement="H",
-        size=size,
-        add.to.row=addtorow,
-        hline.after=c(-1, 1, nrow(out)-1),
-        sanitize.text.function = identity)
-  
+  return(as_tibble(out))
 }
 
-# crossTab(ln$dn.harvested, ln$sup.harvested,
-#          xlab="PSLNs harvested", ylab="SSLNs harvested")
+
 ################################################################################################################################
 
 # Replace a particular character in an entire data frame
@@ -722,37 +688,37 @@ univ.lm <- function(y, x, df, rownames=NULL, caption="", digits=2, label="", asy
 }
 
 # Produces a series of univariate logistic regression models and wraps them in LaTeX.
-univ.logistic <- function(outcome, preds, df, rownames=NULL, caption="", digits=2, label="", asymp.nml=FALSE) {  
-  univ.models <- data.frame(matrix(vector(), 0, 6))
-  for(pred in preds) {
-    mdl <- glm(formula(paste0(outcome, " ~ ", pred)), family=binomial(logit), data=df)
-    if(asymp.nml) {
-      ci <- confint.default(mdl)
-    } else {
-      ci <- confint(mdl)
-    }
-    univ.models <- rbind(univ.models, cbind(summary(mdl)$coef, exp(ci)))
-  }
-  univ.models <- univ.models[!grepl("(Intercept)", row.names(univ.models)),]
-  colnames(univ.models) <- c("coef", "SE", "z", "p", "LB", "UB")
-  univ.models$OR <- exp(univ.models$coef)
-  univ.models <- univ.models[,c("coef", "SE", "OR", "LB", "UB", "p")]
-  
-  for (i in 1:length(univ.models$p)) {
-    univ.models$p[i] <- fmt.pval(as.numeric(univ.models$p[i]), digits=digits, include.p=FALSE, latex=FALSE)
-  }
-  
-  if(is.null(rownames)) rownames <- rownames(univ.models)
-  
-  xt.um <- xtable(univ.models, caption=caption, digits=digits, label=label)
-  align(xt.um) <- "lrrrrrr"
-  rownames(xt.um) <- rownames
-  print(xt.um,
-        include.rownames=TRUE,
-        caption.placement="top",
-        floating=TRUE,
-        table.placement="H")
-}
+# univ.logistic <- function(outcome, preds, df, rownames=NULL, caption="", digits=2, label="", asymp.nml=FALSE) {  
+#   univ.models <- data.frame(matrix(vector(), 0, 6))
+#   for(pred in preds) {
+#     mdl <- glm(formula(paste0(outcome, " ~ ", pred)), family=binomial(logit), data=df)
+#     if(asymp.nml) {
+#       ci <- confint.default(mdl)
+#     } else {
+#       ci <- confint(mdl)
+#     }
+#     univ.models <- rbind(univ.models, cbind(summary(mdl)$coef, exp(ci)))
+#   }
+#   univ.models <- univ.models[!grepl("(Intercept)", row.names(univ.models)),]
+#   colnames(univ.models) <- c("coef", "SE", "z", "p", "LB", "UB")
+#   univ.models$OR <- exp(univ.models$coef)
+#   univ.models <- univ.models[,c("coef", "SE", "OR", "LB", "UB", "p")]
+#   
+#   for (i in 1:length(univ.models$p)) {
+#     univ.models$p[i] <- fmt.pval(as.numeric(univ.models$p[i]), digits=digits, include.p=FALSE, latex=FALSE)
+#   }
+#   
+#   if(is.null(rownames)) rownames <- rownames(univ.models)
+#   
+#   xt.um <- xtable(univ.models, caption=caption, digits=digits, label=label)
+#   align(xt.um) <- "lrrrrrr"
+#   rownames(xt.um) <- rownames
+#   print(xt.um,
+#         include.rownames=TRUE,
+#         caption.placement="top",
+#         floating=TRUE,
+#         table.placement="H")
+# }
 
 ##################################################################################################
 # Functions for survival analysis
