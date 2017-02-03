@@ -202,7 +202,7 @@ cnt.distinct <- function(x) {
 
 # Search column names of a data frame for specified string
 grepcol <- function(phrase, df) {
-  print(colnames(df)[grep(phrase, colnames(df), ignore.case=TRUE)])
+  return(colnames(df)[grep(phrase, colnames(df), ignore.case=TRUE)])
 }
 
 # Rename a data frame
@@ -739,6 +739,19 @@ survest <- function(sf, times, caption="-year survival probability", label="surv
           label=paste0(label, times[i]),
           file="", 
           rowname=NULL, size="footnotesize", where="!htbp")  
+  }
+}
+
+tidy.survest <- function(sf, times, caption="-year survival probability", label="survtime") {
+  for(i in 1:length(times)) {
+    x <- summary(sf, time=times[i])
+    return(data.frame(strata = x$strata[],
+                      time = x$time,
+                      n.risk = x$n.risk,
+                      n.event = x$n.event,
+                      survival.probability = x$surv,
+                      lowerCI = x$lower,
+                      upperCI = x$upper))
   }
 }
 
