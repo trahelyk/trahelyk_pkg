@@ -743,16 +743,18 @@ survest <- function(sf, times, caption="-year survival probability", label="surv
 }
 
 tidy.survest <- function(sf, times, caption="-year survival probability", label="survtime") {
+  outt <- data.frame()
   for(i in 1:length(times)) {
     x <- summary(sf, time=times[i])
-    return(data.frame(strata = x$strata[],
-                      time = x$time,
-                      n.risk = x$n.risk,
-                      n.event = x$n.event,
-                      survival.probability = x$surv,
-                      lowerCI = x$lower,
-                      upperCI = x$upper))
+    outt <- rbind(outt, data.frame(strata = x$strata[],
+                                   time = x$time,
+                                   n.risk = x$n.risk,
+                                   n.event = x$n.event,
+                                   survival.probability = x$surv,
+                                   lowerCI = x$lower,
+                                   upperCI = x$upper))
   }
+  return(outt)
 }
 
 # Produces a series of univariate Cox PH regression models and wraps them in LaTeX.
