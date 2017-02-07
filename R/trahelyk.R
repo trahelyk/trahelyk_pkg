@@ -757,12 +757,11 @@ tidy.survest <- function(sf, times, caption="-year survival probability", label=
   return(outt)
 }
 
-# Produces a series of univariate Cox PH regression models and wraps them in LaTeX.
-univ.coxph <- function(timevar, death.indicator, preds, df, rownames=NULL, caption="", digits=2, label="", size="footnotesize") {  
+# Produces a series of univariate Cox PH regression models and returns a tidy dataset.
+tidy.univ.coxph <- function(timevar, death.indicator, preds, df, rownames=NULL, digits=2) {  
   univ.models <- data.frame(matrix(vector(), 0, 8))
   for(pred in preds) {
     surv.obj <- Surv(df[[timevar]], df[[death.indicator]])
-    #     mdl <- coxph(formula(paste0(timevar, " ~ ", pred)), data=df)
     mdl <- coxph(formula(paste0("surv.obj ~ ", pred)), data=df)
     univ.models <- rbind(univ.models, cbind(n=mdl$n, summary(mdl)$coef, exp(confint(mdl))))
   }
@@ -775,6 +774,18 @@ univ.coxph <- function(timevar, death.indicator, preds, df, rownames=NULL, capti
   }
   
   if(is.null(rownames)) rownames <- rownames(univ.models)
+  
+  return(univ.models)
+}
+
+# Produces a series of univariate Cox PH regression models and wraps them in LaTeX.
+univ.coxph <- function(timevar, death.indicator, preds, df, rownames=NULL, caption="", digits=2, label="", size="footnotesize") {  
+  univ.models <- tidy.univ.coxph(timevar = timevar,
+                                 death.indicator = death.indicator,
+                                 preds = preds,
+                                 df = df,
+                                 rownames = rownames,
+                                 digits = digits)
   
   xt.um <- xtable(univ.models, caption=caption, digits=c(0, 0, rep(digits, 6)), label=label)
   align(xt.um) <- "lrrrrrrr"
