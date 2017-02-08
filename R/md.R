@@ -8,7 +8,7 @@ figs <- captioner(prefix="Figure")
 # -------------------------------------------------------------------------------- 
 # Define a generic function for formatting things in RMarkdown
 # --------------------------------------------------------------------------------
-md <- function(x) UseMethod("md")
+md <- function(x, row.names=FALSE) UseMethod("md")
 md.default <- function(x) {
   print(x)
 }
