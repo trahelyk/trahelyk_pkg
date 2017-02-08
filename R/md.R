@@ -55,7 +55,17 @@ md.tableone <- function(x) {
   cat("<br><br><br>")
 }
 
+# -------------------------------------------------------------------------------- 
+# Wrap a data frame in RMarkdown
+# --------------------------------------------------------------------------------
 md.tbl_df <- function(x, row.names=FALSE) {
+  print(kable(x,
+              format = "markdown",
+              row.names = row.names))
+  cat("\n\n")
+}
+
+md.data.frame <- function(x, row.names=FALSE) {
   print(kable(x,
               format = "markdown",
               row.names = row.names))
