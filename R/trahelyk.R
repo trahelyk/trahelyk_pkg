@@ -775,6 +775,8 @@ tidy.univ.coxph <- function(timevar, death.indicator, preds, df, rownames=NULL, 
   
   if(is.null(rownames)) rownames <- rownames(univ.models)
   
+  rownames(univ.models) <- rownames
+  
   return(univ.models)
 }
 

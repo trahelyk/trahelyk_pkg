@@ -95,3 +95,23 @@ present_mdl.glm <- function(mdl, d=3, intercept=FALSE, varnames=NULL, lbl="", ca
                       caption = caption)
 }
 
+present_mdl.coxph <- function(mdl, d=3, varnames=NULL, lbl="", caption="") {
+  # Reformat the model fit statistics
+  mdl.fit <- glance(mdl)
+  
+  footer <- c()
+  footer <- c(footer, 
+              paste0("N = ", rnd(mdl.fit$n, 0)),
+              paste0("Number of events = ", rnd(mdl.fit$nevent, 0)),
+              paste0("Concordance = ", rnd(mdl.fit$concordance, d)))
+  present_mdl.default(mdl = mdl,
+                      coef.head = "HR",
+                      link = exp,
+                      footer = footer,
+                      d = d,
+                      intercept = TRUE,
+                      varnames=varnames,
+                      lbl = lbl,
+                      caption = caption)
+}
+
