@@ -39,7 +39,7 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
   footer[seq_along(footer)] <- paste0("_", footer[seq_along(footer)], "_\ \ \ ")
   
   # Print the table caption
-  cat(paste0("\n\n##### ", caption, "\n***"))
+  cat(paste0("\n\n**", caption, "**\n***"))
   
   # Print the table
   eval(parse(text=paste0("print(kable(tibble(` ` = mdl.tbl[,c('term')], ",
@@ -115,3 +115,65 @@ present_mdl.coxph <- function(mdl, d=3, varnames=NULL, lbl="", caption="") {
                       caption = caption)
 }
 
+present_mdl.lme <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", caption="", coef.head="Coefficient", link=identity) {
+  # Reformat the model fit statistics
+  mdl.fit <- glance(mdl)
+  
+  footer <- c()
+  footer <- c(footer, 
+              paste0("sigma = ", rnd(mdl.fit$sigma, d)), 
+              paste0("AIC = ", rnd(mdl.fit$AIC, d)),
+              paste0("BIC = ", rnd(mdl.fit$BIC, d)))
+  
+  # Summarize the random effects
+  tidy.rnd <- as.data.frame(unclass(VarCorr(mdl)))
+  
+  # Define the estimates label
+  est.lbl <- paste0(coef.head, " (95\\\\% CI)")
+  
+  # Reformat the coefficients table for fixed effects
+  mdl.tbl <- cbind(tidy(mdl, effects = "fixed"), intervals(mdl)$fixed[,c(1,3)])
+  mdl.tbl[[est.lbl]] <- paste0(rnd(mdl.tbl$estimate, d), " (", 
+                               rnd(mdl.tbl$lower, d), ", ", 
+                               rnd(mdl.tbl$upper, d), ")")
+  
+  # Inverse link function
+  mdl.tbl$estimate <- link(mdl.tbl$estimate)
+  mdl.tbl$lower <- link(mdl.tbl$lower) 
+  mdl.tbl$upper <- link(mdl.tbl$upper)
+  
+  # Remove intercept if requested to do so and adjust varnames accordingly
+  if(!intercept) {
+    mdl.tbl <- mdl.tbl[2:nrow(mdl.tbl),]
+    if (is.null(varnames)) {
+      varnames <- names(mdl$coefficients$fixed)[2:length(mdl$coefficients$fixed)]
+    }
+  } else if(is.null(varnames)) {
+    varnames <- names(mdl$coefficients$fixed)
+  }
+  
+  # Apply variable names
+  mdl.tbl[,1] <- varnames
+  
+  # Reformat the footer
+  footer[seq_along(head(footer, -1))] <- paste0(footer[seq_along(head(footer, -1))], ";")
+  footer[seq_along(footer)] <- paste0("_", footer[seq_along(footer)], "_\ \ \ ")
+  
+  # Print the table caption
+  cat("\n\n", caption, "\n\n ***\n\n")
+  
+  # Print the random-effects table
+  cat("Random effects\n\n***")
+  cat(md(tidy.rnd, row.names = TRUE))
+  
+  # Print the fixed-effects table
+  cat("Fixed effects\n\n***")
+  eval(parse(text=paste0("print(kable(tibble(` ` = mdl.tbl[,c('term')], ",
+                         "`", est.lbl, "` = paste0(rnd(mdl.tbl$estimate, d), ' (', rnd(mdl.tbl$lower, d), ', ', rnd(mdl.tbl$upper, d), ')'), ",
+                         "p = fmt.pval(mdl.tbl$p.value, digits=d, include.p=FALSE, latex=FALSE, md=TRUE)), ",
+                         "check.names=FALSE))")))
+  
+  # Print the footer
+  cat("\n***\n", footer, "\n\n\n\n", sep=" ")
+  cat("<br><br><br>")
+}

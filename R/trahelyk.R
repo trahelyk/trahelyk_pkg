@@ -216,15 +216,15 @@ rename.df <- function(df) {
 # This function is really just a wrapper for format and round. 
 rnd <- function(x,d=3,as.numeric=FALSE) {
   if(as.numeric)
-    return(as.numeric(format(round(x,d), nsmall=d)))
+    return(as.numeric(format(round(x,d), nsmall=d, scientific=FALSE)))
   else
-    return(format(round(x,d), nsmall=d))
+    return(format(round(x,d), nsmall=d, scientific=FALSE))
 }
 
 # Returns a character-formatted version of a p-value, including LaTeX markup
 # to indicate when p is less than the minimum value in the specified number
 # of decimal-place digits.
-fmt.pval <- function(pval, digits=2, include.p=TRUE, latex=TRUE, md=FALSE) {
+fmt.pval <- function(pval, digits=2, include.p=TRUE, latex=FALSE, md=FALSE) {
   p.df <- as.data.frame(cbind(1:length(pval), pval))
   colnames(p.df) <- c("order", "p")
   if(latex) {
@@ -245,7 +245,7 @@ fmt.pval <- function(pval, digits=2, include.p=TRUE, latex=TRUE, md=FALSE) {
     prefix.1 <- lt
     prefix.2 <- ""
   }
-  p.df[p.df$p*(10^(digits)) < 1 & !is.na(p.df$p),c("p.fmt")] <- paste0(prefix.1, as.character(1/(10^digits)))
+  p.df[p.df$p*(10^(digits)) < 1 & !is.na(p.df$p),c("p.fmt")] <- paste0(prefix.1, format(1/(10^digits), scientific=FALSE))
   p.df[p.df$p*(10^(digits)) >= 1 & !is.na(p.df$p),c("p.fmt")] <- paste0(prefix.2, 
                                                                        as.character(rnd(p.df$p[p.df$p*(10^(digits)) >= 1 & !is.na(p.df$p)],digits)))
   p.df[is.na(p.df$p),c("p.fmt")] <- ""

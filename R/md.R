@@ -43,7 +43,7 @@ md.tableone <- function(x) {
   x$footer <- paste0("_", x$footer, "_")
   
   # Print the table caption.
-  cat(paste0("##### ", tbls(x$label, x$caption), "\n***"))
+  cat(paste0("\ \n\ \n\ \ \n", tbls(x$label, x$caption), "\n"))
   
   # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
   print(kable(x$table,
@@ -51,7 +51,7 @@ md.tableone <- function(x) {
               row.names = FALSE))
   
   # Print the footer.
-  cat("\n***\n", x$footer, sep="\n\n")
+  cat("\n***\n", x$footer, sep="  \n")
   cat("<br><br><br>")
 }
 

@@ -61,14 +61,24 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
     
     # If the variable is continuous, analyze by Wilcoxon or t-test
     if(class(df[[sumvar]])[2] %in% c("integer", "numeric")) {
-      # If the user did not specify a test type then use a Shapiro-Wilk normality test to decide between Wilcoxon or t-test
+      # If the user did not specify a test type then use a Wilcoxon rank-sum test if the distance between the mean and 
+      # median is > 0.25 standard deviations; otherwise use a t-test.
       if(test.df$test.type[test.df$col.name==sumvar] == "auto") {
-        if(sw.test.robust(df[[sumvar]]) > 0.05) {
+        if(abs(mean(df[[sumvar]], na.rm=TRUE) - median(df[[sumvar]], na.rm=TRUE))/sd(df[[sumvar]], na.rm=TRUE) <= 0.25) {
           test.df$test.type[test.df$col.name==sumvar] <- "t"
         } else {
           test.df$test.type[test.df$col.name==sumvar] <- "w"
         }
       }
+      
+      # The old version based on a shapiro-wilks test:
+      # if(test.df$test.type[test.df$col.name==sumvar] == "auto") {
+      #   if(sw.test.robust(df[[sumvar]]) > 0.05) {
+      #     test.df$test.type[test.df$col.name==sumvar] <- "t"
+      #   } else {
+      #     test.df$test.type[test.df$col.name==sumvar] <- "w"
+      #   }
+      # }
       
       # t-test
       if(test.df$test.type[test.df$col.name==sumvar]=="t") {
@@ -92,9 +102,9 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
       } else {
         # Wilcoxon rank-sum test
         test <- tryCatch({
-          wc.test <- wilcox.test(formula(paste0(sumvar, "~", grpvar)), data=df)
+          wc.test <- wilcox.test(formula(paste0(sumvar, "~", grpvar), correct=FALSE), data=df)
         }, warning = function(w) {
-          return(suppressWarnings(wilcox.test(formula(paste0(sumvar, "~", grpvar)), data=df)))
+          return(suppressWarnings(wilcox.test(formula(paste0(sumvar, "~", grpvar)), data=df, correct=FALSE)))
         }, error = function(e) {
           return("err")
         }, finally = function() {
@@ -105,7 +115,7 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
         } else {
           wc.pval <- fmt.pval(test$p.value, include.p=FALSE, latex=FALSE, digits=p.digits)
         }
-        method <- "Wilcoxon rank-sum test with continuity correction"
+        method <- "Wilcoxon rank-sum test"
         newrow <- data.frame(cbind(label(df[[sumvar]]),
                                    sum(!is.na(df[[sumvar]])),
                                    paste0(rnd(median(df[df[[grpvar]]==levels(df[[grpvar]])[1], c(sumvar)], na.rm=TRUE), d=d), 
@@ -241,7 +251,7 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
   
   # Generate footer
   footer <- c()
-  if("Wilcoxon rank-sum test with continuity correction" %in% methods.used$method.name) {
+  if("Wilcoxon rank-sum test" %in% methods.used$method.name) {
     footer <- c(footer, "x.x (x.x, x.x) indicates median and inter-quartile range.")
   } 
   if("Student's t-test (two-sided)" %in% methods.used$method.name) {
