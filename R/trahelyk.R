@@ -13,6 +13,10 @@ lib <- function(pkg) {
   eval(paste0("library(", pkg, ")"))
 }
 
+# Generate n NA values in a vector
+batman <- function(n) {
+  return(rep(NA, n))
+}
 
 not.in <- function(newlist, df) {
   return(newlist[!(newlist %in% colnames(df))])

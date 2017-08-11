@@ -4,9 +4,20 @@ require(broom)
 # of the model summary, including fixed effects, random effects, and model statistics.
 # -------------------------------------------------------------------------------- 
 
-present_mdl <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="") UseMethod("present_mdl")
+present_mdl <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="", corPars=FALSE) UseMethod("present_mdl")
 
 present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="") {
+  # Define the line-break character and footer format based on output type
+  if(is.null(opts_knit$get("rmarkdown.pandoc.to"))) {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
+  } else if(opts_knit$get("rmarkdown.pandoc.to")=="html") {
+    br <- "<br>"
+    small <- "<small>"
+    unsmall <- "</small>"
+  }
+  
   # Define the estimates label
   est.lbl <- paste0(coef.head, " (95\\\\% CI)")
   
@@ -35,11 +46,11 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
   mdl.tbl[,1] <- varnames
   
   # Reformat the footer
-  footer[seq_along(head(footer, -1))] <- paste0(footer[seq_along(head(footer, -1))], ";")
-  footer[seq_along(footer)] <- paste0("_", footer[seq_along(footer)], "_\ \ \ ")
+  # footer[seq_along(head(footer, -1))] <- paste0(footer[seq_along(head(footer, -1))], ";")
+  footer[seq_along(footer)] <- paste0(small, "_", footer[seq_along(footer)], "_", unsmall, br)
   
   # Print the table caption
-  cat(paste0("\n\n**", caption, "**\n***"))
+  cat(paste0("\n\n**", caption, "**\n"))
   
   # Print the table
   eval(parse(text=paste0("print(kable(tibble(` ` = mdl.tbl[,c('term')], ",
@@ -49,7 +60,7 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
   
   # Print the footer
   cat("\n***\n", footer, "\n\n\n\n", sep=" ")
-  cat("<br><br><br>")
+  cat(paste0(br))
 }
 
 present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", caption="") {
@@ -70,6 +81,7 @@ present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", capt
                       footer = footer,
                       d = d,
                       intercept = intercept,
+                      varnames = varnames,
                       lbl = lbl,
                       caption = caption)
 }
@@ -95,6 +107,50 @@ present_mdl.glm <- function(mdl, d=3, intercept=FALSE, varnames=NULL, lbl="", ca
                       caption = caption)
 }
 
+present_mdl.geeglm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", caption="", coef.head="", link=identity, corPars=TRUE) {
+  # Define the line-break character and footer format based on output type
+  if(is.null(opts_knit$get("rmarkdown.pandoc.to"))) {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
+  } else if(opts_knit$get("rmarkdown.pandoc.to")=="html") {
+    br <- "<br>"
+    small <- "<small>"
+    unsmall <- "</small>"
+  }
+  
+  # Reformat the model summary
+  se <- switch(mdl$std.err,
+               san.se = "Sandwich estimator",
+               jack = "Approximate jackknife variance estimator",
+               j1s = "1-step jackknife variance estimator",
+               fij = "Fully iterated jackknife variance estimator")
+  
+  corParsTbl <- summary(mdl)$geese$correlation
+  
+  footer <- c()
+  footer <- c(footer, 
+              paste0("Scale parameter = ", rnd(summary(mdl)$geese$scale[1], d), " (", fmt.pval(summary(mdl)$geese$scale[5], d), ")"),
+              paste0("Correlation structure = ", mdl$modelInfo$corstr),
+              paste0("Variance distribution = ", mdl$modelInfo$variance),
+              paste0("Link function = ", mdl$modelInfo$mean.link))
+  
+  present_mdl.default(mdl = mdl,
+                      coef.head = coef.head,
+                      link = link,
+                      footer = footer,
+                      d = d,
+                      intercept = intercept,
+                      varnames=varnames,
+                      lbl = lbl,
+                      caption = caption)
+  
+  if(corPars) {
+    cat(paste0("\n***\n ", br, "\n**Correlation parameters**\n\n***"))
+    cat(md(corParsTbl, row.names = TRUE))
+  }
+}
+
 present_mdl.coxph <- function(mdl, d=3, varnames=NULL, lbl="", caption="") {
   # Reformat the model fit statistics
   mdl.fit <- glance(mdl)
@@ -116,6 +172,17 @@ present_mdl.coxph <- function(mdl, d=3, varnames=NULL, lbl="", caption="") {
 }
 
 present_mdl.lme <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", caption="", coef.head="Coefficient", link=identity) {
+  # Define the line-break character and footer format based on output type
+  if(is.null(opts_knit$get("rmarkdown.pandoc.to"))) {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
+  } else if(opts_knit$get("rmarkdown.pandoc.to")=="html") {
+    br <- "<br>"
+    small <- "<small>"
+    unsmall <- "</small>"
+  }
+  
   # Reformat the model fit statistics
   mdl.fit <- glance(mdl)
   
@@ -175,5 +242,106 @@ present_mdl.lme <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", cap
   
   # Print the footer
   cat("\n***\n", footer, "\n\n\n\n", sep=" ")
-  cat("<br><br><br>")
+  cat(paste0(br))
+}
+
+present_mdl.gls <- function(mdl, d=3, intercept=TRUE, varnames=list(vf_names=NULL, cs_names=NULL, fe_names=NULL, anova_names=NULL), lbl="", caption="", coef.head="Coefficient", link=identity) {
+  # Define the line-break character and footer format based on output type
+  if(is.null(opts_knit$get("rmarkdown.pandoc.to"))) {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
+  } else if(opts_knit$get("rmarkdown.pandoc.to")=="html") {
+    br <- "<br>"
+    small <- "<small>"
+    unsmall <- "</small>"
+  }
+  
+  # Reformat the model fit statistics
+  mdl.sum <- summary(mdl)
+  mdl.fit <- data.frame(sigma = mdl.sum$sigma,
+                        AIC = mdl.sum$AIC,
+                        BIC = mdl.sum$BIC,
+                        logLik = mdl.sum$logLik)
+  
+  footer <- c()
+  footer <- c(footer, 
+              paste0("sigma = ", rnd(mdl.fit$sigma, d)), 
+              paste0("AIC = ", rnd(mdl.fit$AIC, d)),
+              paste0("BIC = ", rnd(mdl.fit$BIC, d)))
+  
+  # Inverse link function
+  fe.tbl <- data.frame(coef <- link(intervals(mdl)$coef[,2]),
+                       lb <- link(intervals(mdl)$coef[,1]),
+                       ub <- link(intervals(mdl)$coef[,3]),
+                       p = fmt.pval(mdl.sum$tTable[,4], d=3)) %>% `colnames<-`(c("coef", "lb", "ub", "p"))
+  
+  # Summarize the variance function
+  if(is.null(varnames$vf_names)) {
+    varnames$vf_names <- rownames(intervals(mdl)$varStruct)
+  }
+  tidy.vf <- data.frame(cbind(Parameter = varnames$vf_names, 
+                              Estimate = paste0(rnd(intervals(mdl)$varStruct[,2], d), " (", 
+                                                rnd(intervals(mdl)$varStruct[,1], d), ", ", 
+                                                rnd(intervals(mdl)$varStruct[,3], d), ")"))) %>% `colnames<-`(c("Parameter", "Estimate (95\\\\% CI)"))
+  
+  # Summarize the correlation structure
+  if(is.null(varnames$cs_names)) {
+    varnames$cs_names <- rownames(intervals(mdl)$corStruct)
+  }
+  tidy.cs <- data.frame(cbind(Parameter = varnames$cs_names, 
+                              Estimate = paste0(rnd(intervals(mdl)$corStruct[,2], d), " (", 
+                                                rnd(intervals(mdl)$corStruct[,1], d), ", ", 
+                                                rnd(intervals(mdl)$corStruct[,3], d), ")"))) %>% `colnames<-`(c("Parameter", "Estimate (95\\\\% CI)"))
+  
+  # Reformat the coefficients table for fixed effects
+  if(is.null(varnames$fe_names)) {
+    varnames$fe_names <- rownames(intervals(mdl)$coef)
+  }
+  tidy.fe <- data.frame(cbind(Parameter = varnames$fe_names, 
+                              Estimate = paste0(rnd(fe.tbl$coef, d), " (", 
+                                                rnd(fe.tbl$lb, d), ", ", 
+                                                rnd(fe.tbl$ub, d), ")"),
+                              p = as.character(fe.tbl$p))) %>% `colnames<-`(c("Parameter", "Estimate (95\\\\% CI)", "p"))
+  
+  # Reformat the F-tests
+  if(is.null(varnames$anova_names)) {
+    varnames$anova_names <- rownames(anova(mdl))
+  }
+  tidy.anova <- cbind(varnames$anova_names, anova(mdl)) %>% 
+    `colnames<-`(c("Effect", "DF", "F-value", "p")) %>% 
+    mutate(p = fmt.pval(p, d=3, include.p=FALSE))
+  
+  # Remove intercept if requested to do so and adjust varnames accordingly
+  if(!intercept) {
+    tidy.fe <- tidy.fe[2:nrow(tidy.fe),]
+    tidy.anova <- tidy.anova[2:nrow(tidy.anova),]
+  }
+  
+  # Reformat the footer
+  footer[seq_along(head(footer, -1))] <- paste0(footer[seq_along(head(footer, -1))], ";")
+  footer[seq_along(footer)] <- paste0("_", footer[seq_along(footer)], "_\ \ \ ")
+  
+  # Print the table caption
+  cat("\n\n", caption, "\n\n ***\n\n")
+  
+  # Print the variance function summary
+  cat("**Variance function**\n\n***")
+  cat(md(tidy.vf, row.names = FALSE))
+  
+  # Print the correlation structure summary
+  cat("\n***\n ", br, "**Correlation structure**\n\n***")
+  cat(md(tidy.cs, row.names = FALSE))
+  
+  # Print the fixed effects
+  cat("\n***\n ", br, "**Fixed effects**\n\n***")
+  cat(md(tidy.fe, row.names = FALSE))
+  
+  # Print the F-tests
+  cat("\n***\n ", br, "**F-tests of fixed effects**\n\n***")
+  cat(md(tidy.anova, row.names = FALSE))
+  
+  # Print the footer
+  cat("\n***\n", footer, "\n\n\n\n", sep=" ")
+  cat(paste0(br, br))
 }
