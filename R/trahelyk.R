@@ -20,6 +20,28 @@ present_or <- function(mdl, varname, d=2, fmt="noparens") {
   return(x)
 }
 
+# Reports a 95% CI for model coefficients. Ideal for in-line R code in a knitr document.
+# Allows the user to specify confidence level and whether results should be exponentiated.
+inline.ci <- function(mdl, parm, digits=2, exp=FALSE, level=0.95) {
+  if(exp)
+  {
+    return(paste0("OR: ",
+                  as.character(rnd(exp(mdl$coefficients[[parm]]),digits)), 
+                  ", 95\\% CI: ",
+                  as.character(rnd(exp(confint(mdl, parm=parm, level=level))[1],digits)),
+                  ", ",
+                  as.character(rnd(exp(confint(mdl, parm=parm, level=level))[2],digits))))
+  }
+  else
+  {
+    return(paste0(as.character(rnd(mdl$coefficients[[parm]],digits)), 
+                  ", 95\\% CI: ",
+                  as.character(rnd(confint(mdl, parm=parm, level=level)[1],digits)),
+                  ", ",
+                  as.character(rnd(confint(mdl, parm=parm, level=level)[2],digits))))
+  }
+}
+
 # Return all the column names of a data frame except for those specified
 cols.except <- function(df, except) {
   colnames(df)[!(colnames(df) %in% except)]

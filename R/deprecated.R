@@ -116,36 +116,6 @@ crossTab <- function(x, y, xlab="X", ylab="Y", x.names=NULL, y.names=NULL, capti
 
 ################################################################################################################################
 
-# Rename a data frame
-rename.df <- function(df) {
-  foo <- df
-  rm(df)
-  return(foo)
-}
-
-# Reports a 95% CI for model coefficients. Ideal for in-line R code in a knitr document.
-# Allows the user to specify confidence level and whether results should be exponentiated.
-inline.ci <- function(mdl, parm, digits=2, exp=FALSE, level=0.95) {
-  if(exp)
-  {
-    return(paste0("OR: ",
-                  as.character(rnd(exp(mdl$coefficients[[parm]]),digits)), 
-                  ", 95\\% CI: ",
-                  as.character(rnd(exp(confint(mdl, parm=parm, level=level))[1],digits)),
-                  ", ",
-                  as.character(rnd(exp(confint(mdl, parm=parm, level=level))[2],digits))))
-  }
-  else
-  {
-    return(paste0("OR: ",
-                  as.character(rnd(mdl$coefficients[[parm]],digits)), 
-                  ", 95\\% CI: ",
-                  as.character(rnd(confint(mdl, parm=parm, level=level)[1],digits)),
-                  ", ",
-                  as.character(rnd(confint(mdl, parm=parm, level=level)[2],digits))))
-  }
-}
-
 # Reports a 95% CI formatted to become part of a latex table
 table.ci <- function(mdl, parm, digits=2, exp=FALSE, level=0.95, asymp.nml=FALSE) {
   if(asymp.nml) {
