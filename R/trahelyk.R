@@ -8,7 +8,7 @@ batman <- function(n) {
 
 # Present a specified odds ratio from a glm object as a character string (for use in narrative)
 present_or <- function(mdl, varname, d=2, fmt="noparens") {
-  est <- rnd(coef(mdl)[varname], d)
+  est <- rnd(exp(coef(mdl)[varname]), d)
   ci <- as.tibble(t(exp(confint.default(mdl))))[[varname]]
   lb <- rnd(ci[1], d)
   ub <- rnd(ci[2], d)
@@ -20,25 +20,68 @@ present_or <- function(mdl, varname, d=2, fmt="noparens") {
   return(x)
 }
 
+# -------------------------------------------------------------------------------- 
 # Reports a 95% CI for model coefficients. Ideal for in-line R code in a knitr document.
 # Allows the user to specify confidence level and whether results should be exponentiated.
-inline.ci <- function(mdl, parm, digits=2, exp=FALSE, level=0.95) {
+# --------------------------------------------------------------------------------
+# Define a generic function
+inline_ci <- function(mdl, parm, sep="paren", digits=2, exp=FALSE, level=0.95) UseMethod("inline_ci")
+
+inline_ci.default <- function(mdl, parm, sep="paren", digits=2, exp=FALSE, level=0.95) {
+  if(sep=="paren") {
+    seps <- c(" (", ")")
+  } else {
+    seps <- c(", ", "")
+  }
   if(exp)
   {
-    return(paste0("OR: ",
-                  as.character(rnd(exp(mdl$coefficients[[parm]]),digits)), 
-                  ", 95\\% CI: ",
+    return(paste0(as.character(rnd(exp(mdl$coefficients[[parm]]),digits)), 
+                  seps[1], "95\\% CI: ",
                   as.character(rnd(exp(confint(mdl, parm=parm, level=level))[1],digits)),
                   ", ",
-                  as.character(rnd(exp(confint(mdl, parm=parm, level=level))[2],digits))))
+                  as.character(rnd(exp(confint(mdl, parm=parm, level=level))[2],digits)),
+                  seps[2]))
   }
   else
   {
     return(paste0(as.character(rnd(mdl$coefficients[[parm]],digits)), 
-                  ", 95\\% CI: ",
+                  seps[1], "95\\% CI: ",
                   as.character(rnd(confint(mdl, parm=parm, level=level)[1],digits)),
                   ", ",
-                  as.character(rnd(confint(mdl, parm=parm, level=level)[2],digits))))
+                  as.character(rnd(confint(mdl, parm=parm, level=level)[2],digits)),
+                  seps[2]))
+  }
+}
+
+inline_ci.lme <- function(mdl, parm, sep="paren", digits=2, exp=FALSE, level=0.95) {
+  if(sep=="paren") {
+    seps <- c(", (", ")")
+  } else {
+    seps <- c(", ", "")
+  }
+  coefs <- intervals(mdl, which="fixed")$fixed
+  coefs <- bind_cols(tibble(var = rownames(coefs)), as.tibble(coefs))
+  coefs %<>%
+    gather(key = est, value = value, 2:ncol(coefs)) %>% 
+    spread_(key = names(coefs)[1],value = 'value')
+  
+  if(exp)
+  {
+    return(paste0(as.character(rnd(exp(coefs[[parm]][1]),digits)), 
+                  seps[1], "95\\% CI: ",
+                  as.character(rnd(exp(coefs[[parm]][2]),digits)),
+                  ", ",
+                  as.character(rnd(exp(coefs[[parm]][3]),digits)),
+                  seps[2]))
+  }
+  else
+  {
+    return(paste0(as.character(rnd(coefs[[parm]][1],digits)), 
+                  seps[1], "95\\% CI: ",
+                  as.character(rnd(coefs[[parm]][2],digits)),
+                  ", ",
+                  as.character(rnd(coefs[[parm]][3],digits)),
+                  seps[2]))
   }
 }
 
@@ -71,11 +114,39 @@ laglead<-function(x,shift_by){
   out
 }
 
-#Apply lables to a dataframe
+
+#' Apply Hmisc-brand labels to all variables in a dataframe or tibble
+#' 
+#' @param df A data frame or tibble.
+#' @param labels A vector of quoted label of length ncol(df).
+#' @return A data frame or tibble.
+#' @examples
+#' foo <- tibble(a = c(1,2,3),
+#'               b = c(4, 5,6)) %>%
+#'   apply_labels(c("A", "B"))
+#' label(foo)
 apply.labels <- function(df, labels) {
   for(i in 1:length(df)) {
-    label(df[[i]]) <- labels[i]
+    Hmisc::label(df[[i]]) <- labels[i]
   }
+  return(df)
+}
+
+#' Apply an Hmisc-brand label to a single variable in a dataframe or tibble
+#' 
+#' @param df A data frame or tibble.
+#' @param x Unquoted name of the column to be labeled. 
+#' @param lbl Quoted label.
+#' @return A data frame or tibble.
+#' @examples
+#' foo <- tibble(a = c(1,2,3),
+#'               b = c(4, 5,6)) %>%
+#'   apply_label(a, "A") %>%
+#'   apply_label(b, "B")
+#'   
+#' label(foo)
+apply_label <- function(df, x, lbl) {
+  label(df[[deparse(substitute(x))]]) <- lbl
   return(df)
 }
 
@@ -228,7 +299,7 @@ survest <- function(sf, times, caption="-year survival probability", label="surv
 tidy.survest <- function(sf, times, caption="-year survival probability", label="survtime") {
   outt <- data.frame()
   for(i in 1:length(times)) {
-    x <- summary(sf, time=times[i])
+    x <- summary(sf, time=times[i], extend=TRUE)
     outt <- rbind(outt, data.frame(strata = x$strata[],
                                    time = x$time,
                                    n.risk = x$n.risk,

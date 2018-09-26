@@ -16,6 +16,10 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
     br <- "<br>"
     small <- "<small>"
     unsmall <- "</small>"
+  } else {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
   }
   
   # Define the estimates label
@@ -117,6 +121,10 @@ present_mdl.geeglm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", 
     br <- "<br>"
     small <- "<small>"
     unsmall <- "</small>"
+  } else {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
   }
   
   # Reformat the model summary
@@ -181,6 +189,10 @@ present_mdl.lme <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", cap
     br <- "<br>"
     small <- "<small>"
     unsmall <- "</small>"
+  } else {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
   }
   
   # Reformat the model fit statistics
@@ -199,7 +211,7 @@ present_mdl.lme <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", cap
   est.lbl <- paste0(coef.head, " (95\\\\% CI)")
   
   # Reformat the coefficients table for fixed effects
-  mdl.tbl <- cbind(tidy(mdl, effects = "fixed"), intervals(mdl)$fixed[,c(1,3)])
+  mdl.tbl <- cbind(tidy(mdl, effects = "fixed"), intervals(mdl, which="fixed")$fixed[,c(1,3)])
   mdl.tbl[[est.lbl]] <- paste0(rnd(mdl.tbl$estimate, d), " (", 
                                rnd(mdl.tbl$lower, d), ", ", 
                                rnd(mdl.tbl$upper, d), ")")
@@ -255,6 +267,10 @@ present_mdl.gls <- function(mdl, d=3, intercept=TRUE, varnames=list(vf_names=NUL
     br <- "<br>"
     small <- "<small>"
     unsmall <- "</small>"
+  } else {
+    br <- "\n"
+    small <- ""
+    unsmall <- ""
   }
   
   # Reformat the model fit statistics

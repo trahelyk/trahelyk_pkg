@@ -192,19 +192,17 @@ lm.summary <- function(mdl, rownames=NULL, caption="", d=2, d.pval=3, latex=TRUE
 # Summarize the fixed effects from a linear mixed-effects model
 lme.summary <- function(mdl, rownames=NULL, caption="", d=2, d.pval=3, latex=TRUE, label="") {
   if(is.null(rownames)) rownames = names(mdl$coefficients[["fixed"]])[2:length(mdl$coefficients[["fixed"]])]
-  outt <- data.frame(matrix(vector(),
-                            0, 3,
-                            dimnames=list(c(),
-                                          c(1, 2, 3))),
-                     stringsAsFactors=F)
+  outt <- tibble(a = character(0),
+                 b = character(0),
+                 c = character(0))
   
-  for(i in 2:length(mdl$coefficients[["fixed"]])) {
+  for(i in 1:length(mdl$coefficients[["fixed"]])) {
     outt <- rbind(outt,
-                  cbind(rownames[i-1],
+                  cbind(rownames[i],
                         paste0(as.character(rnd(intervals(mdl)$fixed[i,2], d=d)), " (",
                                as.character(rnd(intervals(mdl)$fixed[i,1], d=d)), ", ",
                                as.character(rnd(intervals(mdl)$fixed[i,3], d=d)), ")"),
-                        fmt.pval(summary(mdl)$tTable[i,5], digits=d.pval)))
+                        fmt.pval(summary(mdl)$tTable[i,5], digits=d.pval, latex=TRUE, include.p=FALSE)))
   }
   colnames(outt) <- c("", "Coefficient (95\\% CI)", "p-value")
   if(latex) {
@@ -214,8 +212,8 @@ lme.summary <- function(mdl, rownames=NULL, caption="", d=2, d.pval=3, latex=TRU
     
     # Configure footer
     footer <- paste0("\\hline \\multicolumn{1}{l}{{\\scriptsize \\em N = ", summary(mdl)$dims$N, "}}")
-    footer <- paste0(footer, "& \\multicolumn{2}{r}{{\\scriptsize \\em Groups = ", summary(mdl)$dims$ngrps[1], "}} \\\\ \n")
-    footer <- paste0(footer, "\\multicolumn{1}{l}{{\\scriptsize \\em AIC = ", rnd(summary(mdl)$AIC, d=3), "}}")
+    footer <- paste0(footer, "& \\multicolumn{2}{r}{{\\scriptsize \\em AIC = ", rnd(summary(mdl)$AIC, d=3), "}} \\\\ \n")
+    footer <- paste0(footer, "\\multicolumn{1}{l}{{\\scriptsize \\em Groups = ", summary(mdl)$dims$ngrps[1], "}}")
     footer <- paste0(footer, "& \\multicolumn{2}{r}{{\\scriptsize \\em BIC = ", rnd(summary(mdl)$BIC, d=3), "}} \\\\ \n")
     
     addtorow <- list()

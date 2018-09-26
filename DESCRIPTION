@@ -7,4 +7,5 @@ Author: Who wrote it
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
-Depends: Hmisc, xtable, lubridate
+Depends: xtable, Hmisc, lubridate, broom
+RoxygenNote: 6.0.1

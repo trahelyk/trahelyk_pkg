@@ -2,18 +2,18 @@
 # Define function for robust Shapiro-Wilks test, despite David's advice against 
 # doing this
 # -------------------------------------------------------------------------------- 
-sw.test.robust <- function(x, max.ssize = 100, num.tests = 50) {
-  if(length(x) <= max.ssize) {
-    pval <- shapiro.test(x)$p.value
-  } else {
-    psum <- 0
-    for(i in 1:num.tests) {
-      psum <- psum + shapiro.test(head(x[order(runif(length(x)))], max.ssize))$p.value
-    }
-    pval <- psum/num.tests
-  }
-  return(pval)
-}
+# sw.test.robust <- function(x, max.ssize = 100, num.tests = 50) {
+#   if(length(x) <= max.ssize) {
+#     pval <- shapiro.test(x)$p.value
+#   } else {
+#     psum <- 0
+#     for(i in 1:num.tests) {
+#       psum <- psum + shapiro.test(head(x[order(runif(length(x)))], max.ssize))$p.value
+#     }
+#     pval <- psum/num.tests
+#   }
+#   return(pval)
+# }
 
 # -------------------------------------------------------------------------------- 
 # Generate new class to hold the return object, comprising a tidy data frame
@@ -34,8 +34,49 @@ tableone <- function(table, n, footer, caption, label) {
 }
 
 # -------------------------------------------------------------------------------- 
-# Define a function that produces a tableone object.
+# A similar class, but for one-way tables
 # -------------------------------------------------------------------------------- 
+tableoneway <- function(table, n, footer, caption, label) {
+  if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
+      !is.character(caption) | !is.character(label)) {
+    stop("Wrong data type(s) passed to constructor.")
+  }
+  structure(list(table=table, 
+                 n=n,
+                 footer=footer,
+                 caption=caption,
+                 label=label), class = "tableoneway")
+}
+
+
+#' Produces a tableone object, which contains a two-way table grouped by the specificed grouping variable.
+#' 
+#' @param df A data frame or tibble with Hmisc-brand labels.
+#' @param grpvar The quoted name of a grouping variable that splits df into two cohorts.
+#' @param testTypes A vector of length nrow(df) containing "t" for a t-test or "w" for a Wilcoxon rank-sum test; applies only to continuous variables. Leave NULL to allow the function to choose for you based on the distance between the mean and median. 
+#' @param d Number of significant digits to report in (non-p-value) numbers in the tableone object.
+#' @param p.digits Number of significant digits to report in p-values.
+#' @param fisher.simulate.p If TRUE use simulated p-values for Fisher's exact test. Default is FALSE.
+#' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
+#' @param caption Text to be passed to tx() or md() to caption the table. 
+#' @return A tableone object that can be formatted by tx() or md().
+#' @examples
+#' foo <- as_tibble(iris) %>% 
+#'   filter(Species!="setosa") %>% 
+#'     apply.labels(c("Sepal length", 
+#'                    "Sepal width",
+#'                    "Petal length",
+#'                    "Petal width",
+#'                    "Species")) %>%
+#'     mutate(Species = fct_drop(Species))
+#' md(tidy.tableone(foo, grpvar="Species"))
+#' 
+#' md(tidy.tableone(foo, grpvar="Species",
+#'                  testTypes=c("t", "t", "t", "t", "t")))
+#' 
+#' md(tidy.tableone(foo, grpvar="Species",
+#'                  testTypes=c("t", "t", "w", "w", "w")))
+
 tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, lbl="", caption="") {
   df <- as.data.frame(df)
   
@@ -262,9 +303,9 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
   }
   
   # Calculate n for each group
-  n <- list(n.grp1 = nrow(df[df[[grpvar]]==levels(df[[grpvar]])[1],]),
-            n.grp2 = nrow(df[df[[grpvar]]==levels(df[[grpvar]])[2],]),
-            n.combined = nrow(df[!is.na(df[[grpvar]]),]))
+  n <- list(n.grp1 = nrow(df[!is.na(df[[grpvar]]) & df[[grpvar]]==levels(df[[grpvar]])[1],]),
+             n.grp2 = nrow(df[!is.na(df[[grpvar]]) & df[[grpvar]]==levels(df[[grpvar]])[2],]),
+             n.combined = nrow(df[!is.na(df[[grpvar]]),]))
   
   return(tableone(table = out,
                   n = n,
@@ -273,3 +314,145 @@ tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
                   label = lbl))
 }
 
+
+
+tableoneway <- function(table, n, footer, caption, label) {
+  if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
+      !is.character(caption) | !is.character(label)) {
+    stop("Wrong data type(s) passed to constructor.")
+  }
+  structure(list(table=table, 
+                 n=n,
+                 footer=footer,
+                 caption=caption,
+                 label=label), class = "tableoneway")
+}
+
+
+#' Produces a tableoneway object, which contains summary statistics without grouping or bivariate tests.
+#' 
+#' @param df A data frame or tibble with Hmisc-brand labels.
+#' @param testTypes A vector of length nrow(df) containing "t" for a t-test or "w" for a Wilcoxon rank-sum test; applies only to continuous variables. Leave NULL to allow the function to choose for you based on the distance between the mean and median. 
+#' @param d Number of significant digits to report in (non-p-value) numbers in the tableone object.
+#' @param p.digits Number of significant digits to report in p-values.
+#' @param fisher.simulate.p If TRUE use simulated p-values for Fisher's exact test. Default is FALSE.
+#' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
+#' @param caption Text to be passed to tx() or md() to caption the table. 
+#' @return A tableoneway object that can be formatted by tx() or md().
+#' @examples
+
+tidy_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, lbl="", caption="") {
+  df <- as.data.frame(df)
+  
+  #If the user specified a list of summary types of valid length for continuous data, use them; otherwise, set all to "auto".
+  if(length(summaryTypes)!=length(colnames(df))) {
+    summaryTypes <- rep("auto", length(colnames(df)))
+  }
+  
+  summary.df <- data.frame(col.name = colnames(df),
+                           summary.type = summaryTypes,
+                           stringsAsFactors = FALSE)
+  
+  # Create the table, beginning with an empty data frame
+  out <- new.df(cols=4)
+  for (i in seq_along(colnames(df))) {  
+    # Identify the variable to summarize for the current iteration
+    sumvar <- colnames(df)[i]
+    
+    # Make sure the current variable is labeled; throw an error if it is not.
+    if(class(df[[sumvar]])[1] != "labelled") stop("Must label all covariates.")
+    
+    # If the variable is continuous, use a median or mean
+    if(class(df[[sumvar]])[2] %in% c("integer", "numeric")) {
+      # If the user did not specify a summary type then use a median + IQR if the distance between the mean and 
+      # median is > 0.25 standard deviations; otherwise use mean +/- SD.
+      if(summary.df$summary.type[summary.df$col.name==sumvar] == "auto") {
+        if(abs(mean(df[[sumvar]], na.rm=TRUE) - median(df[[sumvar]], na.rm=TRUE))/sd(df[[sumvar]], na.rm=TRUE) <= 0.25) {
+          summary.df$summary.type[summary.df$col.name==sumvar] <- "mean"
+        } else {
+          summary.df$summary.type[summary.df$col.name==sumvar] <- "median"
+        }
+      }
+      
+      # mean +/- SD
+      if(summary.df$summary.type[summary.df$col.name==sumvar]=="mean") {
+        method <- "Mean"
+        newrow <- data.frame(cbind(label(df[[sumvar]]),
+                                   sum(!is.na(df[[sumvar]])),
+                                   paste0(rnd(mean(df[, c(sumvar)], na.rm=TRUE), d=d), 
+                                          " +/- ", 
+                                          rnd(sd(df[, c(sumvar)], na.rm=TRUE), d=d)),
+                                   method))
+        names(newrow) <- names(out)
+        out <- rbind(out, newrow)
+      } else {
+        # Median +/- IQR
+        method <- "Median"
+        newrow <- data.frame(cbind(label(df[[sumvar]]),
+                                   sum(!is.na(df[[sumvar]])),
+                                   paste0(rnd(median(df[, c(sumvar)], na.rm=TRUE), d=d), 
+                                          " (", 
+                                          rnd(quantile(df[, c(sumvar)], 0.25, na.rm=TRUE), d=d),
+                                          ", ",
+                                          rnd(quantile(df[, c(sumvar)], 0.75, na.rm=TRUE), d=d),
+                                          ")"),
+                                   method))
+        names(newrow) <- names(out)
+        out <- rbind(out, newrow)
+      }
+    }
+    
+    # If the variable is categorical, construct a table of proportions
+    if(class(df[[sumvar]])[2] %in% c("logical", "factor")) {
+      method <- "Median"
+      
+      # Construct a contingency table and run a chi-squared test
+      tb <- table(df[[sumvar]])
+      newrow <- data.frame(cbind(label(df[[sumvar]]),
+                                 sum(!is.na(df[[sumvar]])),
+                                 " ", method))
+      names(newrow) <- names(out)
+      out <- rbind(out, newrow)
+      
+      # Identify level labels:
+      if(class(df[[sumvar]])[2]=="logical") {
+        level.labs <- c("FALSE", "TRUE")
+      } else {
+        level.labs <- levels(df[[sumvar]])
+      }
+      
+      for (j in 1:nrow(tb)) {
+        newrow <- data.frame(cbind(paste0(" - ", level.labs[j]),
+                                   " ",
+                                   paste0(fmt.pct(sum(tb[j])/sum(tb), latex=FALSE), " (", sum(tb[j]), ")"),
+                                   " "))
+        names(newrow) <- names(out)
+        out <- rbind(out, newrow)
+      }
+    }
+  }
+  
+  for (l in 1:ncol(out)) {
+    out[,l] <- as.character(out[,l])
+  }
+  
+  colnames(out) <- c(" ", "n", "Summary", "Method")
+  
+  # Generate footer
+  footer <- c()
+  if("Median" %in% out$Method) {
+    footer <- c(footer, "x.x (x.x, x.x) indicates median and inter-quartile range.")
+  } 
+  if("Mean" %in% out$Method) {
+    footer <- c(footer, "x +/- x indicates mean +/- standard deviation.")
+  }
+  
+  # Calculate n for each group
+  n <- list(n.combined = nrow(df))
+  
+  return(tableoneway(table = out %>% select(-Method),
+                     n = n,
+                     footer = footer,
+                     caption = caption,
+                     label = lbl))
+}
