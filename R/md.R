@@ -3,7 +3,20 @@
 # --------------------------------------------------------------------------------
 library("captioner")
 tbls <- captioner(prefix="Table")
+tblcap <- function(caption, name=an.id(10)) {
+  tbls(name=name, caption=caption)
+}
 figs <- captioner(prefix="Figure")
+figcap <- function(caption, name=an.id(10)) {
+  figs(name=name, caption=caption)
+}
+
+# -------------------------------------------------------------------------------- 
+# Add vertical space
+# --------------------------------------------------------------------------------
+vspace <- function(x) {
+  cat(rep("<br>", x))
+}
 
 # -------------------------------------------------------------------------------- 
 # Define a generic function for formatting things in RMarkdown
@@ -52,7 +65,39 @@ md.tableone <- function(x) {
   
   # Print the footer.
   cat("\n***\n", x$footer, sep="  \n")
-  cat("<br><br><br>")
+  cat("<br>")
+}
+
+# -------------------------------------------------------------------------------- 
+# Define a function that displays a tableoneway object in RMarkdown
+# --------------------------------------------------------------------------------
+md.tableoneway <- function(x) {
+  # Reformat +/- in the table
+  for(i in 3:ncol(x$table)) {
+    x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
+  }
+  
+  # Bold the table headers in markdown.
+  colnames(x$table)[c(2,3)] <- paste0("**", colnames(x$table)[c(2,6)], "**") 
+  
+  # Reformat the footer for markdown.
+  for(l in letters[1:10]) {
+    x$footer <- gsub(paste0("\\(", l, "\\)"), paste0("^", l, "^"), x$footer)
+  }
+  x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
+  x$footer <- paste0("_", x$footer, "_")
+  
+  # Print the table caption.
+  cat(paste0("\ \n\ \n\ \ \n", tbls(x$label, x$caption), "\n"))
+  
+  # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
+  print(kable(x$table,
+              format = "markdown",
+              row.names = FALSE))
+  
+  # Print the footer.
+  cat("\n***\n", x$footer, sep="  \n")
+  cat("<br>")
 }
 
 # -------------------------------------------------------------------------------- 
