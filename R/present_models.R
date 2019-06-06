@@ -4,6 +4,20 @@ require(broom)
 # of the model summary, including fixed effects, random effects, and model statistics.
 # -------------------------------------------------------------------------------- 
 
+#' Generic function to format and present a LaTeX table that summarizes a model object.
+#' 
+#' @param mdl A model object
+#' @param coef_head Header text to place at the top of the coefficients column in the formatted table.
+#' @param link Function to be applied to beta coefficients to yield, for example, odds ratios. I know this is not the link function. Defaults to identity.
+#' @param footer Text to add to the table footer, printed below the formatted LaTeX table.
+#' @param d An integer specifying the number of significant digits to be presented in the point estimate and interval. Defaults to 3.
+#' @param intercept Logical indicating whether the intercept should be included in the presentation of the model. Defaults to TRUE.
+#' @param varnames Character vector containing the English-version names of the independent variables in themodel. Defaults to names(mdl$coefficients)
+#' @param lbl LaTeX label to attach to the presented table.
+#' @param caption Caption to print above the table. 
+#' @param corPars Logical indicating whether correlation parameters should be included in the presentation of the model (for GEE models). Defaults to FALSE.
+
+#' @return A formatted LaTeX table containing estimates of model parameters and some simple fit statistics.
 present_mdl <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="", corPars=FALSE) UseMethod("present_mdl")
 
 present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="") {
@@ -59,14 +73,27 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
   # Print the table
   eval(parse(text=paste0("print(kable(tibble(` ` = mdl.tbl[,c('term')], ",
                          "`", est.lbl, "` = paste0(rnd(mdl.tbl$estimate, d), ' (', rnd(mdl.tbl$conf.low, d), ', ', rnd(mdl.tbl$conf.high, d), ')'), ",
-                         "p = fmt.pval(mdl.tbl$p.value, digits=d, include.p=FALSE, latex=FALSE, md=TRUE)), ",
-                         "check.names=FALSE))")))
+                         "p = fmt.pval(mdl.tbl$p.value, digits=d, include.p=FALSE, latex=FALSE, md=TRUE))))")))
+                         # "check.names=FALSE))")))
   
   # Print the footer
   cat("\n***\n", footer, "\n\n\n\n", sep=" ")
   cat(paste0(br))
 }
 
+#' Format and present a LaTeX table that summarizes a linear model object.
+#' 
+#' @param mdl A lm object produced by stats::lm()
+#' @param coef_head Header text to place at the top of the coefficients column in the formatted table.
+#' @param link Function to be applied to beta coefficients to yield, for example, odds ratios. I know this is not the link function. Defaults to identity.
+#' @param footer Text to add to the table footer, printed below the formatted LaTeX table.
+#' @param d An integer specifying the number of significant digits to be presented in the point estimate and interval. Defaults to 3.
+#' @param intercept Logical indicating whether the intercept should be included in the presentation of the model. Defaults to TRUE.
+#' @param varnames Character vector containing the English-version names of the independent variables in themodel. Defaults to names(mdl$coefficients)
+#' @param lbl LaTeX label to attach to the presented table.
+#' @param caption Caption to print above the table. 
+
+#' @return A formatted LaTeX table containing estimates of model parameters and some simple fit statistics.
 present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", caption="") {
   # Reformat the model fit statistics
   mdl.fit <- glance(mdl)
@@ -90,7 +117,17 @@ present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", capt
                       caption = caption)
 }
 
-present_mdl.glm <- function(mdl, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="") {
+#' Format and present a LaTeX table that summarizes a glm model object
+#' 
+#' @param mdl A glm object produced by stats::glm()
+#' @param d An integer specifying the number of significant digits to be presented in the point estimate and interval. Defaults to 3.
+#' @param intercept Logical indicating whether the intercept should be included in the presentation of the model. Defaults to FALSE.
+#' @param varnames Character vector containing the English-version names of the independent variables in themodel. Defaults to names(mdl$coefficients)
+#' @param lbl LaTeX label to attach to the presented table.
+#' @param caption Caption to print above the table. 
+#' @param link Function to be applied to beta coefficients to yield, for example, odds ratios. I know this is not the link function. Defaults to exp.
+#' @return A formatted LaTeX table containing estimates of model parameters and some simple fit statistics.
+present_mdl.glm <- function(mdl, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="", link=exp) {
   # Reformat the model fit statistics
   mdl.fit <- glance(mdl)
   
@@ -102,7 +139,7 @@ present_mdl.glm <- function(mdl, d=3, intercept=FALSE, varnames=NULL, lbl="", ca
               paste0("BIC = ", rnd(mdl.fit$BIC)))
   present_mdl.default(mdl = mdl,
                       coef.head = "OR",
-                      link = exp,
+                      link = link,
                       footer = footer,
                       d = d,
                       intercept = intercept,

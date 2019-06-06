@@ -6,6 +6,47 @@ batman <- function(n) {
   return(rep(NA, n))
 }
 
+#' Calculate a standard error
+#' 
+#' @param x A numeric vector
+#' @param s A standard deviation
+#' @param n N corresponding to s
+#' @
+#' @return Standard error of the mean (numeric)
+
+sem <- function(x=NA, s=NA, n=NA) {
+  if(length(x) > 1) {
+    sem <- sd(x)/sqrt(length(x))
+  } else {
+    if(is.na(s) | is.na(n)) stop("Must provide a numeric vector or s and n.")
+    sem <- s/sqrt(n)
+  }
+  return(sem)
+}
+
+#' Calculate a 95% CI and return it as a formatted string
+#' 
+#' @param x A numeric or integer vector
+#' @param d An integer specifying the number of significant digits to be presented in the point estimate and interval.
+#' @param dist A character string specifying the distribution from which the interval should be calculated. Currently supports "normal" or "t".
+#' @return A character string with the point estimate of the mean, followed by the interval in parentheses.
+
+ci_fmt <- function(x, d=2, dist="normal") {
+  if(dist=="normal") {
+    dist_cut <- c(qnorm(0.975))
+  } else if(dist=="t") {
+    dist_cut <- c(qt(0.975, df=n-1))
+  }
+  
+  n <- length(x)
+  se <- sd(x)/sqrt(n)
+  xbar <- mean(x, na.rm=TRUE) 
+  return(paste0(rnd(xbar, d), " (", 
+                rnd(xbar - dist_cut*se, d), ", ",
+                rnd(xbar + dist_cut*se, d), ")"))
+}
+
+
 # Present a specified odds ratio from a glm object as a character string (for use in narrative)
 present_or <- function(mdl, varname, d=2, fmt="noparens") {
   est <- rnd(exp(coef(mdl)[varname]), d)

@@ -11,6 +11,14 @@ tx.default <- function(x) {
 # Function that wraps a data.frame object in LaTeX
 # --------------------------------------------------------------------------------
 tx.data.frame <- function(x, caption="", d=3, include_rownames=FALSE, tbl_align=NULL, footer=NULL, footer_align="l", size="footnotesize") {
+  # Replace special characters
+  for(i in 1:nrow(x)) {
+    for(j in 1:ncol(x)) {
+      x[i,j] <- gsub("\\+/-", "$\\\\pm$", x[i,j])
+      x[i,j] <- gsub("<", "\\\\textless ", x[i,j]) 
+    }
+  } 
+  
   xt.out <- xtable(x, caption=caption, digits=d)
   
   if(length(tbl_align) == 0) {
@@ -253,6 +261,93 @@ tx.lme <- function(x, d=3, intercept=TRUE, varnames=NULL, lbl="", caption="", co
           add.to.row=addtorow,
           size="footnotesize",
           hline.after=c(-1, 0, nrow(mdl.tbl) - nrow(tidy.rnd)),
+          sanitize.text.function = identity)
+  } else return(mdl.tbl)
+}
+
+#' Present a glm model object in a LaTeX table
+#' 
+#' @param mdl A glm object
+#' @param d An integer specifying the number of significant digits to be presented in the table.
+#' @param intercept Logical indicating whether the table should include a row for the fixed intercept. Default is FALSE.
+#' @param varnames Character vector of length length(names(mdl$coefficients$fixed)) specifying the names of fixed effects in the model.
+#' @param lbl LaTeX label for the table.
+#' @param caption Caption for the table.
+#' @param coef.head Word or phrase to use as a header for coefficient estimates. Default is OR.
+#' @param transf Function to transform beta coefficients. Default is exp().
+#' @param print_mdl Logical indicating whether the summary table should be wrapped in LaTeX.
+#' @return A LaTeX or clear-text table.
+tx.glm <- function(x, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="", coef.head="OR", transf=exp, print_mdl=TRUE) {
+  mdl <- x
+  n_observations <- nrow(summary(x)$groups)
+  
+  # Reformat the model fit statistics
+  mdl.fit <- glance(mdl)
+  
+  footer <- c()
+  footer <- c(footer, 
+              paste0("Null deviance: ", rnd(mdl.fit$null.deviance, d)),
+              paste0("DF (null): ", mdl.fit$df.null),
+              paste0("Deviance = ", rnd(mdl.fit$deviance, d)), 
+              paste0("DF (resid): ", mdl.fit$df.residual),
+              paste0("AIC = ", rnd(mdl.fit$AIC, d)),
+              paste0("BIC = ", rnd(mdl.fit$BIC, d)))
+  
+  # Define the estimates label
+  est.lbl <- paste0(coef.head, " (95\\% CI)")
+  
+  # Reformat the coefficients table and transform the beta coefficients
+  mdl.tbl <- cbind(tidy(mdl), confint.default(mdl) %>% `colnames<-`(c("lower", "upper")))
+  
+  # Transform the beta coefficients
+  mdl.tbl$estimate <- transf(mdl.tbl$estimate)
+  mdl.tbl$lower <- transf(mdl.tbl$lower) 
+  mdl.tbl$upper <- transf(mdl.tbl$upper)
+  
+  mdl.tbl[[est.lbl]] <- paste0(rnd(mdl.tbl$estimate, d), " (", 
+                               rnd(mdl.tbl$lower, d), ", ", 
+                               rnd(mdl.tbl$upper, d), ")")
+  
+  
+  # Remove intercept if requested to do so and adjust varnames accordingly
+  if(!intercept) {
+    mdl.tbl <- mdl.tbl[2:nrow(mdl.tbl),]
+    if (is.null(varnames)) {
+      varnames <- names(mdl$coefficients)[2:length(mdl$coefficients)]
+    }
+  } else if(is.null(varnames)) {
+    varnames <- names(mdl$coefficients)
+  }
+  
+  # Apply variable names
+  mdl.tbl[,1] <- varnames
+  
+  if(print_mdl) {
+    # Reformat the footer
+    footer_txt <- "\\hline \n"
+    for(footline in 1:length(footer)) {
+      footer_txt <- paste0(footer_txt, "{\\em \\scriptsize ", footer[footline], "}\\\\ \n")
+    }
+    
+    outt <- xtable(mdl.tbl %>% select(est.lbl,
+                                      `p.value`), caption=caption, digits=3)
+    align(outt) <- paste0("ll", paste(rep("r", 1), collapse=""))
+    
+    # Configure header and footer  
+    addtorow <- list()
+    addtorow$pos <- list(nrow(outt))
+    addtorow$command <- c(footer_txt)
+    
+    
+    # Print the table
+    print(outt,
+          include.rownames=FALSE,
+          caption.placement="top",
+          floating=TRUE,
+          table.placement="H",
+          add.to.row=addtorow,
+          size="footnotesize",
+          hline.after=c(-1, 0, nrow(mdl.tbl)),
           sanitize.text.function = identity)
   } else return(mdl.tbl)
 }

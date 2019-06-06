@@ -64,7 +64,7 @@ md.tableone <- function(x) {
               row.names = FALSE))
   
   # Print the footer.
-  cat("\n***\n", x$footer, sep="  \n")
+  # cat("\n***\n", x$footer, sep="  \n")
   cat("<br>")
 }
 
