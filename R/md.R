@@ -21,15 +21,28 @@ vspace <- function(x) {
 # -------------------------------------------------------------------------------- 
 # Define a generic function for formatting things in RMarkdown
 # --------------------------------------------------------------------------------
-md <- function(x, row.names=FALSE) UseMethod("md")
+md <- function(x, word=FALSE, row.names=FALSE, ...) UseMethod("md")
 md.default <- function(x) {
   print(x)
 }
 
 # -------------------------------------------------------------------------------- 
+# Define a function that customizes or omits style divs for Word
+# --------------------------------------------------------------------------------
+word_style <- function(word, wordstyles, style, cat_txt) {
+  if(word) {
+    div_open <- paste0("<div custom-style='", wordstyles[[style]], "'>")
+    div_close <- "</div>"
+  } else {
+    div_open <- div_close <- ""
+  }
+  return(cat(div_open, cat_txt, div_close, sep="  \n"))
+}
+
+# -------------------------------------------------------------------------------- 
 # Define a function that displays a tableone object in RMarkdown
 # --------------------------------------------------------------------------------
-md.tableone <- function(x) {
+md.tableone <- function(x, word=FALSE, wordstyles=NA) {
   # Combine the method with the p-value and format it as a superscript.
   x$table$p <- paste0(x$table$p, "^", x$table$method, "^")
   x$table$method <- NULL
@@ -56,7 +69,7 @@ md.tableone <- function(x) {
   x$footer <- paste0("_", x$footer, "_")
   
   # Print the table caption.
-  cat(paste0("\ \n\ \n\ \ \n", tbls(x$label, x$caption), "\n"))
+  word_style(word=word, wordstyles=wordstyles, style="tablecaption", cat_txt = paste0(tbls(x$label, x$caption)))
   
   # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
   print(kable(x$table,
@@ -64,7 +77,7 @@ md.tableone <- function(x) {
               row.names = FALSE))
   
   # Print the footer.
-  # cat("\n***\n", x$footer, sep="  \n")
+  word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
   cat("<br>")
 }
 
