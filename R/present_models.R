@@ -20,24 +20,35 @@ require(broom)
 #' @return A formatted LaTeX table containing estimates of model parameters and some simple fit statistics.
 present_mdl <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="", corPars=FALSE) UseMethod("present_mdl")
 
-present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="") {
+present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=3, intercept=TRUE, varnames, lbl="", caption="", latex=TRUE) {
   # Define the line-break character and footer format based on output type
   if(is.null(opts_knit$get("rmarkdown.pandoc.to"))) {
     br <- "\n"
     small <- ""
     unsmall <- ""
+    emph <- "\\textit{"
+    unemph <- "}\\\\"
   } else if(opts_knit$get("rmarkdown.pandoc.to")=="html") {
+    latex <- FALSE
     br <- "<br>"
     small <- "<small>"
     unsmall <- "</small>"
+    emph <- "_"
+    unemph <- "_"
   } else {
     br <- "\n"
     small <- ""
     unsmall <- ""
+    emph <- "\\textit{"
+    unemph <- "}\\\\"
   }
   
   # Define the estimates label
-  est.lbl <- paste0(coef.head, " (95\\\\% CI)")
+  if(latex) {
+    est.lbl <- paste0(coef.head, " (CI)")
+  } else {
+    est.lbl <- paste0(coef.head, " (CI)")
+  }
   
   # Reformat the coefficients table
   mdl.tbl <- cbind(tidy(mdl), confint_tidy(mdl))
@@ -65,20 +76,53 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
   
   # Reformat the footer
   # footer[seq_along(head(footer, -1))] <- paste0(footer[seq_along(head(footer, -1))], ";")
-  footer[seq_along(footer)] <- paste0(small, "_", footer[seq_along(footer)], "_", unsmall, br)
+  footer[seq_along(footer)] <- paste0(small, emph, footer[seq_along(footer)], unemph, unsmall, br)
   
-  # Print the table caption
-  cat(paste0("\n\n**", caption, "**\n"))
   
   # Print the table
-  eval(parse(text=paste0("print(kable(tibble(` ` = mdl.tbl[,c('term')], ",
-                         "`", est.lbl, "` = paste0(rnd(mdl.tbl$estimate, d), ' (', rnd(mdl.tbl$conf.low, d), ', ', rnd(mdl.tbl$conf.high, d), ')'), ",
-                         "p = fmt.pval(mdl.tbl$p.value, digits=d, include.p=FALSE, latex=FALSE, md=TRUE))))")))
-                         # "check.names=FALSE))")))
-  
-  # Print the footer
-  cat("\n***\n", footer, "\n\n\n\n", sep=" ")
-  cat(paste0(br))
+  if(latex) {
+    outt <- tibble(` ` = mdl.tbl[,c('term')], 
+                   Coefficient = paste0(rnd(mdl.tbl$estimate, d), ' (', rnd(mdl.tbl$conf.low, d), ', ', rnd(mdl.tbl$conf.high, d), ')'), 
+                   p = fmt.pval(mdl.tbl$p.value, digits=d, include.p=FALSE, latex=TRUE))
+    eval(parse(text=paste0("outt %<>% rename(", coef.head, " = Coefficient)")))
+    xt.out <- xtable(outt, caption=caption, digits=d)
+    align(xt.out) <- paste0("ll", paste(rep("r", 2), collapse=""))
+    
+    # Configure header and footer  
+    footer_txt <- ""
+    for(footline in 1:length(footer)) {
+      footer_txt <- paste0(footer_txt, footer[footline])
+    }
+    # footer_txt <- paste0("\\multicolumn{3}{l}{\\em ", footer_txt, "} \\\\ \n ")
+    
+    addtorow <- list()
+    addtorow$pos <- list(nrow(outt))
+    df <- outt
+    addtorow$command <- paste0("\\hline ", footer_txt)
+    
+    # Print the table
+    print(xt.out,
+          include.rownames=FALSE,
+          caption.placement="top",
+          floating=TRUE,
+          table.placement="H",
+          add.to.row=addtorow,
+          size="footnotesize",
+          hline.after=c(-1, 0),
+          sanitize.text.function = identity)
+  } else {
+    # Print the table caption
+    cat(paste0("\n\n**", caption, "**\n"))
+    
+    eval(parse(text=paste0("print(kable(tibble(` ` = mdl.tbl[,c('term')], ",
+                           "`", est.lbl, "` = paste0(rnd(mdl.tbl$estimate, d), ' (', rnd(mdl.tbl$conf.low, d), ', ', rnd(mdl.tbl$conf.high, d), ')'), ",
+                           "p = fmt.pval(mdl.tbl$p.value, digits=d, include.p=FALSE, latex=FALSE, md=TRUE))))")))
+    # "check.names=FALSE))")))
+    
+    # Print the footer
+    cat("\n***\n", footer, "\n\n\n\n", sep=" ")
+    cat(paste0(br))
+  }
 }
 
 #' Format and present a LaTeX table that summarizes a linear model object.
@@ -94,27 +138,26 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
 #' @param caption Caption to print above the table. 
 
 #' @return A formatted LaTeX table containing estimates of model parameters and some simple fit statistics.
-present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", caption="") {
+present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", footer=c(), caption="") {
   # Reformat the model fit statistics
   mdl.fit <- glance(mdl)
   
-  footer <- c()
   footer <- c(footer, 
-              paste0("R^2^ = ", rnd(mdl.fit$r.squared, d)), 
-              paste0("Adj R^2^ = ", rnd(mdl.fit$adj.r.squared, d)),
+              paste0("$R^2 = ", rnd(mdl.fit$r.squared, d), "$"), 
+              paste0("Adj $R^2 = ", rnd(mdl.fit$adj.r.squared, d), "$"),
               paste0("AIC = ", rnd(mdl.fit$AIC, d)),
               paste0("BIC = ", rnd(mdl.fit$BIC, d)),
-              fmt.pval(mdl.fit$p.value, digits=d, latex=FALSE))
+              fmt.pval(mdl.fit$p.value, digits=d, latex=TRUE))
   
   present_mdl.default(mdl = mdl,
-                      coef.head = "Coefficient",
-                      link = identity,
-                      footer = footer,
-                      d = d,
-                      intercept = intercept,
-                      varnames = varnames,
-                      lbl = lbl,
-                      caption = caption)
+                          coef.head,
+                          link = identity,
+                          footer = footer,
+                          d = d,
+                          intercept = intercept,
+                          varnames = varnames,
+                          lbl = lbl,
+                          caption = caption)
 }
 
 #' Format and present a LaTeX table that summarizes a glm model object
@@ -196,7 +239,7 @@ present_mdl.geeglm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", 
   }
 }
 
-present_mdl.coxph <- function(mdl, d=3, varnames=NULL, lbl="", caption="") {
+present_mdl.coxph <- function(mdl, d=3, varnames=NULL, lbl="", caption="", coef.head="Hazard ratio (CI)") {
   # Reformat the model fit statistics
   mdl.fit <- glance(mdl)
   
@@ -245,7 +288,7 @@ present_mdl.lme <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", cap
   tidy.rnd <- as.data.frame(unclass(VarCorr(mdl)))
   
   # Define the estimates label
-  est.lbl <- paste0(coef.head, " (95\\\\% CI)")
+  est.lbl <- paste0(coef.head, " (CI)")
   
   # Reformat the coefficients table for fixed effects
   mdl.tbl <- cbind(tidy(mdl, effects = "fixed"), intervals(mdl, which="fixed")$fixed[,c(1,3)])
@@ -336,7 +379,7 @@ present_mdl.gls <- function(mdl, d=3, intercept=TRUE, varnames=list(vf_names=NUL
   tidy.vf <- data.frame(cbind(Parameter = varnames$vf_names, 
                               Estimate = paste0(rnd(intervals(mdl)$varStruct[,2], d), " (", 
                                                 rnd(intervals(mdl)$varStruct[,1], d), ", ", 
-                                                rnd(intervals(mdl)$varStruct[,3], d), ")"))) %>% `colnames<-`(c("Parameter", "Estimate (95\\\\% CI)"))
+                                                rnd(intervals(mdl)$varStruct[,3], d), ")"))) %>% `colnames<-`(c("Parameter", "Estimate (CI)"))
   
   # Summarize the correlation structure
   if(is.null(varnames$cs_names)) {
@@ -345,7 +388,7 @@ present_mdl.gls <- function(mdl, d=3, intercept=TRUE, varnames=list(vf_names=NUL
   tidy.cs <- data.frame(cbind(Parameter = varnames$cs_names, 
                               Estimate = paste0(rnd(intervals(mdl)$corStruct[,2], d), " (", 
                                                 rnd(intervals(mdl)$corStruct[,1], d), ", ", 
-                                                rnd(intervals(mdl)$corStruct[,3], d), ")"))) %>% `colnames<-`(c("Parameter", "Estimate (95\\\\% CI)"))
+                                                rnd(intervals(mdl)$corStruct[,3], d), ")"))) %>% `colnames<-`(c("Parameter", "Estimate (CI)"))
   
   # Reformat the coefficients table for fixed effects
   if(is.null(varnames$fe_names)) {
@@ -355,7 +398,7 @@ present_mdl.gls <- function(mdl, d=3, intercept=TRUE, varnames=list(vf_names=NUL
                               Estimate = paste0(rnd(fe.tbl$coef, d), " (", 
                                                 rnd(fe.tbl$lb, d), ", ", 
                                                 rnd(fe.tbl$ub, d), ")"),
-                              p = as.character(fe.tbl$p))) %>% `colnames<-`(c("Parameter", "Estimate (95\\\\% CI)", "p"))
+                              p = as.character(fe.tbl$p))) %>% `colnames<-`(c("Parameter", "Estimate (CI)", "p"))
   
   # Reformat the F-tests
   if(is.null(varnames$anova_names)) {

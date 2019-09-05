@@ -230,7 +230,7 @@ rnd <- function(x,d=3,as.numeric=FALSE) {
 # Returns a character-formatted version of a p-value, including markup
 # to indicate when p is less than the minimum value in the specified number
 # of decimal-place digits.
-fmt.pval <- function(pval, digits=2, include.p=TRUE, latex=FALSE, md=FALSE) {
+fmt.pval <- function(pval, digits=3, include.p=TRUE, latex=FALSE, md=FALSE) {
   p.df <- as.data.frame(cbind(1:length(pval), pval))
   colnames(p.df) <- c("order", "p")
   if(latex) {

@@ -5,7 +5,7 @@
 \title{Format and present a LaTeX table that summarizes a linear model object.}
 \usage{
 \method{present_mdl}{lm}(mdl, d = 3, intercept = TRUE, varnames = NULL,
-  lbl = "", caption = "")
+  lbl = "", footer = c(), caption = "")
 }
 \arguments{
 \item{mdl}{A lm object produced by stats::lm()}
@@ -18,13 +18,13 @@
 
 \item{lbl}{LaTeX label to attach to the presented table.}
 
+\item{footer}{Text to add to the table footer, printed below the formatted LaTeX table.}
+
 \item{caption}{Caption to print above the table.}
 
 \item{coef_head}{Header text to place at the top of the coefficients column in the formatted table.}
 
 \item{link}{Function to be applied to beta coefficients to yield, for example, odds ratios. I know this is not the link function. Defaults to identity.}
-
-\item{footer}{Text to add to the table footer, printed below the formatted LaTeX table.}
 }
 \value{
 A formatted LaTeX table containing estimates of model parameters and some simple fit statistics.

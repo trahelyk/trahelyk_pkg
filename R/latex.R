@@ -7,6 +7,15 @@ tx.default <- function(x) {
   print(x)
 }
 
+sanity <- function(df) {
+  for(i in 1:ncol(df)) {
+    df[,i] <- gsub("\\+/-", "$\\\\pm$", df[,i])
+    df[,i] <- gsub("%", "\\\\%", df[,i])
+    df[,i] <- gsub("- ", "", df[,i])
+  }
+  return(df)
+}
+
 # -------------------------------------------------------------------------------- 
 # Function that wraps a data.frame object in LaTeX
 # --------------------------------------------------------------------------------
@@ -102,6 +111,113 @@ tx.tableone <- function(x, size="footnotesize") {
         add.to.row=addtorow,
         size=size,
         hline.after=c(-1, 0),
+        sanitize.text.function = identity)
+}
+
+#' Present two tableone objects in a stratified LaTeX table
+#' 
+#' @param t1 A tableone object
+#' @param t2 A second tableone object
+#' @param head1 Header for the first stratum
+#' @param head2 Header for the second stratum
+#' @param size Font size
+#' @return A LaTeX table.
+tx.tableone_stratified <- function(t1, t2, head1, head2, size="footnotesize") {
+  warning("This function assumes hypothesis tests use the same rowwise methods in both tables, and it uses the footer from t2.")
+  ########## 
+  # Clean up table 1
+  ##########
+  
+  # Combine the method with the p-value and format it as a superscript.
+  t1$table$p <- paste0("$", t1$table$p, "^", t1$table$method, "$")
+  t1$table$method <- NULL
+  t1$table$p[t1$table$p=="$.^$"] <- "$\\cdot$~~"
+  t1$table$p[t1$table$p=="$ ^$"] <- "~"
+  
+  # Reformat +/- in the table
+  for(i in 3:5) {
+    t1$table[,i] <- gsub("\\+/-", "$\\\\pm$", t1$table[,i])
+    t1$table[,i] <- gsub("%", "\\\\%", t1$table[,i])
+    t1$table[,i] <- gsub("- ", "~~~~~~~~~~", t1$table[,i])
+  }
+  
+  t1$table[,1] <- gsub("- ", "~~~~~~~~~~", t1$table[,1])
+  
+  # Bold the table headers in LaTeX.
+  colnames(t1$table)[c(2,6)] <- paste0("{\\bf ", colnames(t1$table)[c(2,6)], "}") 
+  colnames(t1$table)[3] <- paste0("{\\bf ", colnames(t1$table)[3], "}")
+  colnames(t1$table)[4] <- paste0("{\\bf ", colnames(t1$table)[4], "}")
+  colnames(t1$table)[5] <- paste0("{\\bf ", colnames(t1$table)[5], "}")
+  
+  ########## 
+  # Clean up table 2
+  ##########
+  # Combine the method with the p-value and format it as a superscript.
+  t2$table$p <- paste0("$", t2$table$p, "^", t2$table$method, "$")
+  t2$table$method <- NULL
+  t2$table$p[t2$table$p=="$.^$"] <- "$\\cdot$~~"
+  t2$table$p[t2$table$p=="$ ^$"] <- "~"
+  
+  # Reformat +/- in the table
+  for(i in 3:5) {
+    t2$table[,i] <- gsub("\\+/-", "$\\\\pm$", t2$table[,i])
+    t2$table[,i] <- gsub("%", "\\\\%", t2$table[,i])
+    t2$table[,i] <- gsub("- ", "~~~~~~~~~~", t2$table[,i])
+  }
+  
+  t2$table[,1] <- gsub("- ", "~~~~~~~~~~", t2$table[,1])
+  
+  # Bold the table headers in LaTeX.
+  colnames(t2$table)[c(2,6)] <- paste0("{\\bf ", colnames(t2$table)[c(2,6)], "}") 
+  colnames(t2$table)[3] <- paste0("{\\bf ", colnames(t2$table)[3], "}")
+  colnames(t2$table)[4] <- paste0("{\\bf ", colnames(t2$table)[4], "}")
+  colnames(t2$table)[5] <- paste0("{\\bf ", colnames(t2$table)[5], "}")
+  
+  ########## 
+  # Combine the two tables
+  ##########
+  tbl_stratified <- cbind(t1$table %>% select(-`{\\bf n}`), 
+                          tibble(`~` = rep("~", nrow(t1$table))),
+                          t2$table %>% select(-`{\\bf n}`, -` `))
+  
+  # Reformat the footer for LaTeX.
+  for(l in letters[1:10]) {
+    t2$footer <- gsub(paste0("\\(", l, "\\)"), paste0("$^", l, "$"), t2$footer)
+  }
+  t2$footer <- gsub("\\+/-", "$\\\\pm$", t2$footer)
+  t2$footer <- paste0("\\multicolumn{6}{l}{\\em ", t2$footer, "} \\\\ \n ")
+  
+  footer <- ""
+  for(footline in 1:length(t2$footer)) {
+    footer <- paste0(footer, t2$footer[footline])
+  }
+  
+  xt.out <- xtable(tbl_stratified, caption=t2$caption, digits=3)
+  align(xt.out) <- paste0("ll", paste(rep("r", 9), collapse=""))
+  
+  # Configure header and footer  
+  addtorow <- list()
+  addtorow$pos <- list(-1,0, nrow(tbl_stratified))
+  
+  addtorow$command <- c(paste0("\\hline \n & \\multicolumn{4}{c}{\\bf ", head1, "} & ~ & \\multicolumn{4}{c}{\\bf ", head2, "} \\\\\\cmidrule{2-5} \\cmidrule{7-10} \n "),
+                        paste0("~ & {\\em (n = ", t1$n$n.grp1, 
+                               ")} & {\\em (n = ", t1$n$n.grp2,
+                               ")} & {\\em (n = ", t1$n$n.combined,
+                               ")} & ~ & ~ & {\\em (n = ", t2$n$n.grp1, 
+                               ")} & {\\em (n = ", t2$n$n.grp2,
+                               ")} & {\\em (n = ", t2$n$n.combined,
+                               ")} & ~ \\\\\n"),
+                        paste0("\\hline ", footer))
+  
+  # Print the table
+  print(xt.out,
+        include.rownames=FALSE,
+        caption.placement="top",
+        floating=TRUE,
+        table.placement="H",
+        add.to.row=addtorow,
+        size=size,
+        hline.after=c(0),
         sanitize.text.function = identity)
 }
 

@@ -5,7 +5,8 @@
 \title{Produces a tableone object, which contains a two-way table grouped by the specificed grouping variable.}
 \usage{
 \method{tidy}{tableone}(df, grpvar, testTypes = NULL, d = 1, p.digits = 3,
-  fisher.simulate.p = FALSE, lbl = "", caption = "")
+  fisher.simulate.p = FALSE, trunc_binary = TRUE, lbl = "",
+  caption = "")
 }
 \arguments{
 \item{df}{A data frame or tibble with Hmisc-brand labels.}
@@ -19,6 +20,8 @@
 \item{p.digits}{Number of significant digits to report in p-values.}
 
 \item{fisher.simulate.p}{If TRUE use simulated p-values for Fisher's exact test. Default is FALSE.}
+
+\item{trunc_binary}{If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows, with the variable name and p-value on a row above. Default is TRUE.}
 
 \item{lbl}{LaTeX label to be passed to tx() for labeling the table in a LaTeX document.}
 
