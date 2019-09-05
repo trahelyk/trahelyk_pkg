@@ -29,6 +29,7 @@ sem <- function(x=NA, s=NA, n=NA) {
 #' @param x A numeric or integer vector
 #' @param d An integer specifying the number of significant digits to be presented in the point estimate and interval.
 #' @param dist A character string specifying the distribution from which the interval should be calculated. Currently supports "normal" or "t".
+#' @
 #' @return A character string with the point estimate of the mean, followed by the interval in parentheses.
 
 ci_fmt <- function(x, d=2, dist="normal") {
