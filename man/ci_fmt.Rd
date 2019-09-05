@@ -2,7 +2,7 @@
 % Please edit documentation in R/trahelyk.R
 \name{ci_fmt}
 \alias{ci_fmt}
-\title{Calculate a 95% CI and return it as a formatted string}
+\title{Calculate a CI and return it as a formatted string}
 \usage{
 ci_fmt(x, d = 2, dist = "normal")
 }
@@ -17,5 +17,5 @@ ci_fmt(x, d = 2, dist = "normal")
 A character string with the point estimate of the mean, followed by the interval in parentheses.
 }
 \description{
-Calculate a 95% CI and return it as a formatted string
+Calculate a CI and return it as a formatted string
 }

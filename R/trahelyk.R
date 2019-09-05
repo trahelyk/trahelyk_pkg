@@ -24,7 +24,7 @@ sem <- function(x=NA, s=NA, n=NA) {
   return(sem)
 }
 
-#' Calculate a 95% CI and return it as a formatted string
+#' Calculate a CI and return it as a formatted string
 #' 
 #' @param x A numeric or integer vector
 #' @param d An integer specifying the number of significant digits to be presented in the point estimate and interval.
