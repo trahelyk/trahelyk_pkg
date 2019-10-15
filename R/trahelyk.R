@@ -39,8 +39,8 @@ ci_fmt <- function(x, d=2, dist="normal") {
     dist_cut <- c(qt(0.975, df=n-1))
   }
   
-  n <- length(x)
-  se <- sd(x)/sqrt(n)
+  n <- sum(!is.na(x))
+  se <- sd(x, na.rm=TRUE)/sqrt(n)
   xbar <- mean(x, na.rm=TRUE) 
   return(paste0(rnd(xbar, d), " (", 
                 rnd(xbar - dist_cut*se, d), ", ",
