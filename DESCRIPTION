@@ -9,3 +9,5 @@ Description: A collection of tools, mostly for formatting output for dynamic doc
 License: GPL
 Depends: xtable, Hmisc, lubridate, broom
 RoxygenNote: 6.0.1
+Imports: pROC,
+    captioner
