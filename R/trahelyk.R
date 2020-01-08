@@ -188,7 +188,7 @@ apply.labels <- function(df, labels) {
 #'   
 #' label(foo)
 apply_label <- function(df, x, lbl) {
-  label(df[[deparse(substitute(x))]]) <- lbl
+  Hmisc::label(df[[deparse(substitute(x))]]) <- lbl
   return(df)
 }
 
