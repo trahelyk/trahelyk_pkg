@@ -103,6 +103,11 @@ md.tableoneway <- function(x) {
   # Print the table caption.
   cat(paste0("\ \n\ \n\ \ \n", tbls(x$label, x$caption), "\n"))
   
+  # Suppress the "n" column if specified
+  if(!include_n) {
+    x$table <- x$table[,c(1,3)]
+  }
+  
   # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
   print(kable(x$table,
               format = "markdown",

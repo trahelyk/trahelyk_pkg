@@ -350,12 +350,13 @@ tableoneway <- function(table, n, footer, caption, label) {
 #' @param d Number of significant digits to report in (non-p-value) numbers in the tableone object.
 #' @param p.digits Number of significant digits to report in p-values.
 #' @param fisher.simulate.p If TRUE use simulated p-values for Fisher's exact test. Default is FALSE.
+#' @param trunc_binary If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows. Default is TRUE.
 #' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
 #' @param caption Text to be passed to tx() or md() to caption the table. 
 #' @return A tableoneway object that can be formatted by tx() or md().
 #' @examples
 
-tidy_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, lbl="", caption="") {
+tidy_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   #If the user specified a list of summary types of valid length for continuous data, use them; otherwise, set all to "auto".
@@ -428,20 +429,29 @@ tidy_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
       names(newrow) <- names(out)
       out <- rbind(out, newrow)
       
-      # Identify level labels:
-      if(class(df[[sumvar]])[2]=="logical") {
-        level.labs <- c("FALSE", "TRUE")
-      } else {
-        level.labs <- levels(df[[sumvar]])
-      }
-      
-      for (j in 1:nrow(tb)) {
-        newrow <- data.frame(cbind(paste0(" - ", level.labs[j]),
-                                   " ",
-                                   paste0(fmt.pct(sum(tb[j])/sum(tb), latex=FALSE), " (", sum(tb[j]), ")"),
-                                   " "))
+      if(nrow(tb)==2 & trunc_binary) {
+        newrow <- data.frame(cbind(label(df[[sumvar]]),
+                                   sum(!is.na(df[[sumvar]])),
+                                   paste0(fmt.pct(tb[2]/sum(tb), latex=FALSE), " (", tb[2], ")"),
+                                   method))
         names(newrow) <- names(out)
         out <- rbind(out, newrow)
+      } else { 
+        # Identify level labels:
+        if(class(df[[sumvar]])[2]=="logical") {
+          level.labs <- c("FALSE", "TRUE")
+        } else {
+          level.labs <- levels(df[[sumvar]])
+        }
+        
+        for (j in 1:nrow(tb)) {
+          newrow <- data.frame(cbind(paste0(" - ", level.labs[j]),
+                                     " ",
+                                     paste0(fmt.pct(sum(tb[j])/sum(tb), latex=FALSE), " (", sum(tb[j]), ")"),
+                                     " "))
+          names(newrow) <- names(out)
+          out <- rbind(out, newrow)
+        }
       }
     }
   }
@@ -450,7 +460,7 @@ tidy_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
     out[,l] <- as.character(out[,l])
   }
   
-  colnames(out) <- c(" ", "n", "Summary", "Method")
+  colnames(out) <- c(" ", "n", "Percent (N)", "Method")
   
   # Generate footer
   footer <- c()

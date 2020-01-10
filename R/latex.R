@@ -225,8 +225,9 @@ tx.tableone_stratified <- function(t1, t2, head1, head2, size="footnotesize") {
 #' 
 #' @param x A tableoneway object
 #' @param size Font size
+#' @param include_n Include a column showing non-missing count for each variable? Logical; default=FALSE.
 #' @return A LaTeX or clear-text table.
-tx.tableoneway <- function(x, size="footnotesize") {
+tx.tableoneway <- function(x, size="footnotesize", include_n=FALSE) {
   # Reformat +/- in the table
   for(i in 1:3) {
     x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
@@ -234,15 +235,24 @@ tx.tableoneway <- function(x, size="footnotesize") {
     x$table[,i] <- gsub("- ", "~~~~~~~~~~", x$table[,i])
   }
   
+  if(!include_n) {
+    tex_cols <- 2
+    x$table <- x$table[,c(1,3)]
+    tex_hdrs <- c(2)
+  } else {
+    tex_cols <- 3
+    tex_hdrs <- c(2,3)
+  }
+  
   # Bold the table headers in LaTeX.
-  colnames(x$table)[c(2,3)] <- paste0("{\\bf ", colnames(x$table)[c(2,3)], "}") 
+  colnames(x$table)[tex_hdrs] <- paste0("{\\bf ", colnames(x$table)[tex_hdrs], "}") 
   
   # Reformat the footer for LaTeX.
   for(l in letters[1:10]) {
     x$footer <- gsub(paste0("\\(", l, "\\)"), paste0("$^", l, "$"), x$footer)
   }
   x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
-  x$footer <- paste0("\\multicolumn{3}{l}{\\em ", x$footer, "} \\\\ \n ")
+  x$footer <- paste0("\\multicolumn{", tex_cols, "}{l}{\\em ", x$footer, "} \\\\ \n ")
   
   footer <- ""
   for(footline in 1:length(x$footer)) {
@@ -250,7 +260,7 @@ tx.tableoneway <- function(x, size="footnotesize") {
   }
   
   xt.out <- xtable(x$table, caption=x$caption, digits=3)
-  align(xt.out) <- paste0("ll", paste(rep("r", 2), collapse=""))
+  align(xt.out) <- paste0("ll", paste(rep("r", tex_cols-1), collapse=""))
   
   # Configure header and footer  
   addtorow <- list()
