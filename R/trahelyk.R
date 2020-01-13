@@ -137,6 +137,16 @@ factorny <- function(x) {
   return(factor(x, labels = c("No", "Yes")))
 }
 
+#' Return a 2-level factor with labels "No" and "Yes"
+#'
+#' @param x A binary (0,1) numeric vector
+#'
+#' @return A factor with levels and lables c("No", "Yes")
+
+fact0rny <- function(x) {
+  return(factor(x, levels=c(0,1), labels = c("No", "Yes")))
+}
+
 # Define laglead function
 laglead<-function(x,shift_by){
   stopifnot(is.numeric(shift_by))
