@@ -33,6 +33,18 @@ tableone <- function(table, n, footer, caption, label) {
                  label=label), class = "tableone")
 }
 
+trahble <- function(table, n, footer, caption, label) {
+  if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
+      !is.character(caption) | !is.character(label)) {
+    stop("Wrong data type(s) passed to constructor.")
+  }
+  structure(list(table=table, 
+                 n=n,
+                 footer=footer,
+                 caption=caption,
+                 label=label), class = "trahble")
+}
+
 # -------------------------------------------------------------------------------- 
 # A similar class, but for one-way tables
 # -------------------------------------------------------------------------------- 
@@ -498,7 +510,7 @@ make_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
 #' @export
 #'
 #' @examples
-make_tableNway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+trahbulate <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   if (lbl=="") lbl <- an.id(9)
@@ -537,7 +549,7 @@ make_tableNway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.s
       if(test.df$test.type[test.df$col.name==sumvar]=="mean") {
         suppressWarnings(center <- map_dfr(levels(df[[grpvar]]), 
                                            function(lvl) data.frame(ctr = paste0(rnd(mean(df[[sumvar]][df[[grpvar]]==lvl], na.rm=TRUE), d=d), 
-                                                                                 " $\\pm$ ", 
+                                                                                 " +/- ", 
                                                                                  rnd(sd(df[[sumvar]][df[[grpvar]]==lvl], na.rm=TRUE), d=d)))))
         overall_ctr <- paste0(rnd(mean(df[[sumvar]], na.rm=TRUE), d=d), 
                               " $\\pm$ ", 
@@ -665,7 +677,7 @@ make_tableNway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.s
   
   names(N) <- c(levels(df[[grpvar]]), "combined")
   
-  return(tableone(table = out,
+  return(trahble(table = out,
                   n = N,
                   footer = footer,
                   caption = caption,

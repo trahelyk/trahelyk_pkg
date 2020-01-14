@@ -4,8 +4,15 @@
 \alias{present_mdl.lm}
 \title{Format and present a LaTeX table that summarizes a linear model object.}
 \usage{
-\method{present_mdl}{lm}(mdl, d = 3, intercept = TRUE, varnames = NULL,
-  lbl = "", footer = c(), caption = "")
+\method{present_mdl}{lm}(
+  mdl,
+  d = 3,
+  intercept = TRUE,
+  varnames = NULL,
+  lbl = "",
+  footer = c(),
+  caption = ""
+)
 }
 \arguments{
 \item{mdl}{A lm object produced by stats::lm()}

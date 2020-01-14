@@ -4,8 +4,17 @@
 \alias{tx.glm}
 \title{Present a glm model object in a LaTeX table}
 \usage{
-\method{tx}{glm}(x, d = 3, intercept = FALSE, varnames = NULL, lbl = "",
-  caption = "", coef.head = "OR", transf = exp, print_mdl = TRUE)
+\method{tx}{glm}(
+  x,
+  d = 3,
+  intercept = FALSE,
+  varnames = NULL,
+  lbl = "",
+  caption = "",
+  coef.head = "OR",
+  transf = exp,
+  print_mdl = TRUE
+)
 }
 \arguments{
 \item{d}{An integer specifying the number of significant digits to be presented in the table.}

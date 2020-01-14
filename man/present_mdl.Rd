@@ -4,8 +4,18 @@
 \alias{present_mdl}
 \title{Generic function to format and present a LaTeX table that summarizes a model object.}
 \usage{
-present_mdl(mdl, coef.head = "", link = identity, footer = c(), d = 3,
-  intercept = TRUE, varnames, lbl = "", caption = "", corPars = FALSE)
+present_mdl(
+  mdl,
+  coef.head = "",
+  link = identity,
+  footer = c(),
+  d = 3,
+  intercept = TRUE,
+  varnames,
+  lbl = "",
+  caption = "",
+  corPars = FALSE
+)
 }
 \arguments{
 \item{mdl}{A model object}

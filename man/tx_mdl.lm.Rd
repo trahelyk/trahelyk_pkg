@@ -4,9 +4,18 @@
 \alias{tx_mdl.lm}
 \title{Present a lm-produced model object in a LaTeX table}
 \usage{
-\method{tx_mdl}{lm}(mdl, d = 3, intercept = TRUE, varnames = NULL,
-  lbl = "", caption = "", coef.head = "Coefficient", footer = c(),
-  FUN = identity, print_mdl = TRUE)
+\method{tx_mdl}{lm}(
+  mdl,
+  d = 3,
+  intercept = TRUE,
+  varnames = NULL,
+  lbl = "",
+  caption = "",
+  coef.head = "Coefficient",
+  footer = c(),
+  FUN = identity,
+  print_mdl = TRUE
+)
 }
 \arguments{
 \item{mdl}{A lm object}

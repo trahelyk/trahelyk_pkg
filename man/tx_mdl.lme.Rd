@@ -4,9 +4,17 @@
 \alias{tx_mdl.lme}
 \title{Present an nlme-produced lme model object in a LaTeX table}
 \usage{
-\method{tx_mdl}{lme}(mdl, d = 3, intercept = TRUE, varnames = NULL,
-  lbl = "", caption = "", coef.head = "Coefficient", FUN = identity,
-  print_mdl = TRUE)
+\method{tx_mdl}{lme}(
+  mdl,
+  d = 3,
+  intercept = TRUE,
+  varnames = NULL,
+  lbl = "",
+  caption = "",
+  coef.head = "Coefficient",
+  FUN = identity,
+  print_mdl = TRUE
+)
 }
 \arguments{
 \item{mdl}{An lme object}

@@ -4,9 +4,18 @@
 \alias{tx_mdl.glm}
 \title{Present a glm-produced model object in a LaTeX table}
 \usage{
-\method{tx_mdl}{glm}(mdl, d = 3, intercept = FALSE, varnames = NULL,
-  lbl = "", caption = "", coef.head = "OR", FUN = exp, footer = c(),
-  print_mdl = TRUE)
+\method{tx_mdl}{glm}(
+  mdl,
+  d = 3,
+  intercept = FALSE,
+  varnames = NULL,
+  lbl = "",
+  caption = "",
+  coef.head = "OR",
+  FUN = exp,
+  footer = c(),
+  print_mdl = TRUE
+)
 }
 \arguments{
 \item{mdl}{A glm object}

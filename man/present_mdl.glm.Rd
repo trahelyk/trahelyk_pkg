@@ -4,8 +4,15 @@
 \alias{present_mdl.glm}
 \title{Format and present a LaTeX table that summarizes a glm model object}
 \usage{
-\method{present_mdl}{glm}(mdl, d = 3, intercept = FALSE, varnames = NULL,
-  lbl = "", caption = "", link = exp)
+\method{present_mdl}{glm}(
+  mdl,
+  d = 3,
+  intercept = FALSE,
+  varnames = NULL,
+  lbl = "",
+  caption = "",
+  link = exp
+)
 }
 \arguments{
 \item{mdl}{A glm object produced by stats::glm()}

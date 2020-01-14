@@ -5,8 +5,7 @@
 \title{Generate roc_obj object that is handy for summarizing discrimination statistics and for passing
 to other functions for presentation}
 \usage{
-roc_obj(x, y, xlab = "", units = "", ci = FALSE, rnd_thresh = 0,
-  rnd_discr = 2)
+roc_obj(x, y, xlab = "", units = "", ci = FALSE, rnd_thresh = 0, rnd_discr = 2)
 }
 \arguments{
 \item{x}{Numeric or ordinal vector of predictors}

@@ -4,9 +4,17 @@
 \alias{tx_mdl.coxph}
 \title{Present a coxph-produced model object in a LaTeX table}
 \usage{
-\method{tx_mdl}{coxph}(mdl, d = 3, varnames = NULL, lbl = "",
-  caption = "", coef.head = "HR", FUN = exp, footer = c(),
-  print_mdl = TRUE)
+\method{tx_mdl}{coxph}(
+  mdl,
+  d = 3,
+  varnames = NULL,
+  lbl = "",
+  caption = "",
+  coef.head = "HR",
+  FUN = exp,
+  footer = c(),
+  print_mdl = TRUE
+)
 }
 \arguments{
 \item{mdl}{A coxph object}

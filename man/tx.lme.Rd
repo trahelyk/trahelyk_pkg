@@ -4,9 +4,17 @@
 \alias{tx.lme}
 \title{Present an nlme-produced lme model object in a LaTeX table}
 \usage{
-\method{tx}{lme}(x, d = 3, intercept = TRUE, varnames = NULL, lbl = "",
-  caption = "", coef.head = "Coefficient", link = identity,
-  print_mdl = TRUE)
+\method{tx}{lme}(
+  x,
+  d = 3,
+  intercept = TRUE,
+  varnames = NULL,
+  lbl = "",
+  caption = "",
+  coef.head = "Coefficient",
+  link = identity,
+  print_mdl = TRUE
+)
 }
 \arguments{
 \item{d}{An integer specifying the number of significant digits to be presented in the table.}

@@ -8,7 +8,7 @@ Maintainer: Kyle D Hart <hartky@ohsu.edu>
 Description: A collection of tools, mostly for formatting output for dynamic documents
 License: GPL
 Depends: xtable, Hmisc, lubridate, broom
-RoxygenNote: 6.0.1
+RoxygenNote: 7.0.2
 Imports: pROC,
     captioner,
     gmodels

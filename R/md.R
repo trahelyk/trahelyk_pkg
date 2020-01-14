@@ -39,9 +39,16 @@ word_style <- function(word, wordstyles, style, cat_txt) {
   return(cat(div_open, cat_txt, div_close, sep="  \n"))
 }
 
-# -------------------------------------------------------------------------------- 
-# Define a function that displays a tableone object in RMarkdown
-# --------------------------------------------------------------------------------
+#' Display a tableone table in RMarkdown
+#'
+#' @param A tableone object, produced by make_tableone
+#' @param word Logical indicating whether the output should be formatted for an MS Word 
+#' @param wordstyles Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.
+#'
+#' @return Side effects.
+#' @export
+#'
+#' @examples
 md.tableone <- function(x, word=FALSE, wordstyles=NA) {
   # Combine the method with the p-value and format it as a superscript.
   x$table$p <- paste0(x$table$p, "^", x$table$method, "^")
@@ -117,6 +124,49 @@ md.tableoneway <- function(x) {
   cat("\n***\n", x$footer, sep="  \n")
   cat("<br>")
 }
+
+#' Display a trahble-based tabulation in RMarkdown
+#'
+#' @param A trahble object, produced by trahbulate
+#' @param word Logical indicating whether the output should be formatted for an MS Word 
+#' @param wordstyles Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.
+#'
+#' @return NULL
+#' @export
+#'
+#' @examples
+md.trahble <- function(x, word=FALSE, wordstyles=NA) {
+  # Reformat +/- in the table
+  for(i in 3:5) {
+    x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
+  }
+  
+  # Remove the method column
+  x$table$method <- NULL
+  
+  # Bold the table headers in markdown.
+  colnames(x$table)[c(2)] <- paste0("**", colnames(x$table)[c(2)], "**") 
+  colnames(x$table)[3:(ncol(x$table)-1)] <- map_chr(3:(ncol(x$table)-1), 
+                                                    function(i) paste0("**", colnames(x$table)[i], " (n=", x$n[[i-2]], ")**"))
+  colnames(x$table)[ncol(x$table)] <- paste0("**", colnames(x$table)[ncol(x$table)], " (n=", x$n$combined, ")**")
+  
+  # Reformat the footer for markdown.
+  x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
+  x$footer <- paste0("_", x$footer, "_")
+  
+  # Print the table caption.
+  word_style(word=word, wordstyles=wordstyles, style="tablecaption", cat_txt = paste0(tbls(x$label, x$caption)))
+  
+  # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
+  print(kable(x$table,
+              format = "markdown",
+              row.names = FALSE))
+  
+  # Print the footer.
+  word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
+  cat("<br>")
+}
+
 
 # -------------------------------------------------------------------------------- 
 # Wrap a data frame in RMarkdown
