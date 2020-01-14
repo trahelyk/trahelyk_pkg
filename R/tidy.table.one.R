@@ -78,7 +78,7 @@ tableoneway <- function(table, n, footer, caption, label) {
 #' md(tidy.tableone(foo, grpvar="Species",
 #'                  testTypes=c("t", "t", "w", "w", "w")))
 
-tidy.tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+make_tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   if (lbl=="") lbl <- an.id(9)
@@ -356,7 +356,7 @@ tableoneway <- function(table, n, footer, caption, label) {
 #' @return A tableoneway object that can be formatted by tx() or md().
 #' @examples
 
-tidy_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+make_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   #If the user specified a list of summary types of valid length for continuous data, use them; otherwise, set all to "auto".
@@ -479,4 +479,195 @@ tidy_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
                      footer = footer,
                      caption = caption,
                      label = lbl))
+}
+
+
+#' Tabulate a set of variables by an N-dimensional grouping variable.
+#'
+#' @param df A data frame or tibble with Hmisc-brand labels.
+#' @param grpvar The quoted name of a grouping variable that splits df into N cohorts.
+#' @param testTypes A vector of length nrow(df) containing "mean" for means and SDs or "median" medians and IQRs; applies only to continuous variables. Leave NULL to allow the function to choose for you based on the distance between the mean and median. 
+#' @param d Number of significant digits to report in numbers in the tableone object.
+#' @param p.digits Not used.
+#' @param fisher.simulate.p Not used.
+#' @param trunc_binary If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows, with the variable name on a row above. Default is TRUE.
+#' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
+#' @param caption Text to be passed to tx() or md() to caption the table. 
+#'
+#' @return A tableone object that can be formatted by tx() or md().
+#' @export
+#'
+#' @examples
+make_tableNway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+  df <- as.data.frame(df)
+  
+  if (lbl=="") lbl <- an.id(9)
+  
+  # If the user specified a list of test types of valid length for continuous data, use them; otherwise, set all to "auto".
+  if(length(testTypes)!=length(colnames(df))) {
+    testTypes <- rep("auto", length(colnames(df)))
+  }
+  
+  test.df <- data.frame(col.name = colnames(df),
+                        test.type = testTypes,
+                        stringsAsFactors = FALSE)
+  
+  # Create the table, beginning with an empty data frame
+  out <- new.df(cols=length(levels(df[[grpvar]]))+4)
+  for (i in seq_along(cols.except(df, grpvar))) {  
+    # Identify the variable to summarize for the current iteration
+    sumvar <- colnames(df)[!(colnames(df) %in% grpvar)][i]
+    
+    # Make sure the current variable is labeled; use the variable name if not.
+    if(label(df[[sumvar]]) == "") label(df[[sumvar]]) <- sumvar
+    
+    # If the variable is continuous, present either a median or a mean
+    if(class(df[[sumvar]])[2] %in% c("integer", "numeric")) {
+      # If the user did not specify a measure of center then use a median if the distance between the mean and 
+      # median is > 0.25 standard deviations; otherwise use a mean.
+      if(test.df$test.type[test.df$col.name==sumvar] == "auto") {
+        if(abs(mean(df[[sumvar]], na.rm=TRUE) - median(df[[sumvar]], na.rm=TRUE))/sd(df[[sumvar]], na.rm=TRUE) <= 0.25) {
+          test.df$test.type[test.df$col.name==sumvar] <- "mean"
+        } else {
+          test.df$test.type[test.df$col.name==sumvar] <- "median"
+        }
+      }
+      
+      # Mean/median
+      if(test.df$test.type[test.df$col.name==sumvar]=="mean") {
+        suppressWarnings(center <- map_dfr(levels(df[[grpvar]]), 
+                                           function(lvl) data.frame(ctr = paste0(rnd(mean(df[[sumvar]][df[[grpvar]]==lvl], na.rm=TRUE), d=d), 
+                                                                                 " $\\pm$ ", 
+                                                                                 rnd(sd(df[[sumvar]][df[[grpvar]]==lvl], na.rm=TRUE), d=d)))))
+        overall_ctr <- paste0(rnd(mean(df[[sumvar]], na.rm=TRUE), d=d), 
+                              " $\\pm$ ", 
+                              rnd(sd(df[[sumvar]], na.rm=TRUE), d=d))
+        method <- "Means"
+      } else {
+        suppressWarnings(center <- map_dfr(levels(df[[grpvar]]), 
+                                           function(lvl) data.frame(ctr = paste0(rnd(median(df[[sumvar]][df[[grpvar]]==lvl], na.rm=TRUE), d=d), 
+                                                                                 paste0(" (", paste(rnd(quantile(df[[sumvar]][df[[grpvar]]==lvl], 
+                                                                                                                 c(.25, .75)), 
+                                                                                                        d=d), 
+                                                                                                    collapse=", "), ")")))))
+        overall_ctr <- paste0(rnd(mean(df[[sumvar]], na.rm=TRUE), d=d), 
+                              paste0(" (", paste(rnd(quantile(df[[sumvar]], 
+                                                              c(.25, .75)), 
+                                                     d=d), 
+                                                 collapse=", "), ")"))
+        method <- "Medians"
+      }
+      newrow <- as.data.frame(cbind(label(df[[sumvar]]),
+                                    sum(!is.na(df[[sumvar]]) & !is.na(df[[grpvar]])),
+                                    t(center),
+                                    overall_ctr,
+                                    method))
+      
+      names(newrow) <- names(out)
+      out <- rbind(out, newrow)
+    }
+    
+    # If the variable is categorical, present Ns and percentages
+    if(class(df[[sumvar]])[2] %in% c("logical", "factor")) {
+      
+      method <- "pct"
+      
+      # Construct a contingency table 
+      tb <- table(df[[sumvar]], df[[grpvar]])
+      
+      # Identify level labels:
+      if(class(df[[sumvar]])[2]=="logical") {
+        level.labs <- c("FALSE", "TRUE")
+      } else {
+        level.labs <- levels(df[[sumvar]])
+      }
+      
+      if(nrow(tb)==2 & trunc_binary) {   
+        newrow <- data.frame(cbind(label(df[[sumvar]]),
+                                   sum(!is.na(df[[sumvar]]) & !is.na(df[[grpvar]])),
+                                   suppressWarnings(cnts <- t(map_dfr(seq_along(levels(df[[grpvar]])), 
+                                                                      function(lvl) data.frame(cnt = paste0(fmt.pct(tb[2,lvl]/sum(tb[,lvl]), 
+                                                                                                                    latex=FALSE), 
+                                                                                                            " (", tb[2,lvl], ")"))))),
+                                   paste0(fmt.pct(sum(tb[2,])/sum(tb[,]), latex=FALSE), " (", sum(tb[2,]), ")"),
+                                   method))
+        names(newrow) <- names(out)
+        out <- rbind(out, newrow)
+      } else {
+        newrow <- data.frame(cbind(label(df[[sumvar]]),
+                                   sum(!is.na(df[[sumvar]]) & !is.na(df[[grpvar]])),
+                                   t(rep(" ", length(levels(df[[grpvar]]))+1)),
+                                   method))
+        names(newrow) <- names(out)
+        out <- rbind(out, newrow)
+        
+        method <- ""
+        for (j in 1:nrow(tb)) {
+          newrow <- data.frame(cbind(paste0(" - ", level.labs[j]),
+                                     " ",
+                                     suppressWarnings(cnts <- t(map_dfr(seq_along(levels(df[[grpvar]])), 
+                                                                        function(lvl) data.frame(cnt = paste0(fmt.pct(tb[j,lvl]/sum(tb[,lvl]), 
+                                                                                                                      latex=FALSE), 
+                                                                                                              " (", tb[j,lvl], ")"))))),
+                                     paste0(fmt.pct(sum(tb[j,])/sum(tb[,]), latex=FALSE), " (", sum(tb[j,]), ")"),
+                                     method))
+          names(newrow) <- names(out)
+          out <- rbind(out, newrow)
+        }
+      }
+    }
+  }
+  
+  
+  for (l in 1:ncol(out)) {
+    out[,l] <- as.character(out[,l])
+  }
+  
+  colnames(out) <- c(" ", "n", levels(df[[grpvar]]), "Combined", "method.name")
+  
+  # Identify methods used
+  methods.used <- data.frame(method.name = unique(out$method.name[out$method.name!=""]),
+                             method = letters[seq(1:length(unique(out$method.name[out$method.name!=""])))],
+                             stringsAsFactors = FALSE)
+  out$sort <- seq(1:nrow(out))
+  out <- merge(out, methods.used,
+               by="method.name",
+               all.x=TRUE)
+  out <- out[order(out$sort),]
+  out$sort <- NULL
+  out$method[is.na(out$method)] <- ""
+  out$method.name <- NULL
+  
+  # Replace NaN% with 0%
+  out[[levels(df[[grpvar]])[1]]] <- gsub(pattern="NaN", 
+                                         replacement="0",
+                                         x=out[[levels(df[[grpvar]])[1]]])
+  out[[levels(df[[grpvar]])[1]]] <- gsub(pattern="NaN", 
+                                         replacement="0",
+                                         x=out[[levels(df[[grpvar]])[1]]])
+  
+  # Generate footer
+  footer <- c()
+  if("Medians" %in% methods.used$method.name) {
+    footer <- c(footer, "x.x (x.x, x.x) indicates median and inter-quartile range.")
+  } 
+  if("Means" %in% methods.used$method.name) {
+    footer <- c(footer, "x +/- x indicates mean +/- standard deviation.")
+  }
+  if("pct" %in% methods.used$method.name) {
+    footer <- c(footer, " ")
+  }
+  
+  # Calculate n for each group
+  N <- map(seq_along(levels(df[[grpvar]])),
+           function(i) nrow(df[!is.na(df[[grpvar]]) & df[[grpvar]]==levels(df[[grpvar]])[i],]))
+  N$combined <- nrow(df[!is.na(df[[grpvar]]),])
+  
+  names(N) <- c(levels(df[[grpvar]]), "combined")
+  
+  return(tableone(table = out,
+                  n = N,
+                  footer = footer,
+                  caption = caption,
+                  label = lbl))
 }
