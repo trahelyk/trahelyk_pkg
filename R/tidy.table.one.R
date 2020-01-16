@@ -615,7 +615,7 @@ trahbulate <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simul
         
         method <- ""
         for (j in 1:nrow(tb)) {
-          newrow <- data.frame(cbind(paste0(" - ", level.labs[j]),
+          newrow <- data.frame(cbind(paste0("<span style='margin-left:30px;'>", level.labs[j], "</span>"),
                                      " ",
                                      suppressWarnings(cnts <- t(map_dfr(seq_along(levels(df[[grpvar]])), 
                                                                         function(lvl) data.frame(cnt = paste0(fmt.pct(tb[j,lvl]/sum(tb[,lvl]), 
