@@ -7,11 +7,11 @@
 \method{md}{trahble}(x, word = FALSE, wordstyles = NA)
 }
 \arguments{
-\item{word}{Logical indicating whether the output should be formatted for an MS Word}
+\item{word}{Logical indicating whether the output should be formatted for an MS Word .}
 
 \item{wordstyles}{Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.}
 
-\item{A}{trahble object, produced by trahbulate}
+\item{A}{trahble object, produced by trahbulate.}
 }
 \description{
 Display a trahble-based tabulation in RMarkdown

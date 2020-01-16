@@ -127,8 +127,8 @@ md.tableoneway <- function(x, include_n=FALSE) {
 
 #' Display a trahble-based tabulation in RMarkdown
 #'
-#' @param A trahble object, produced by trahbulate
-#' @param word Logical indicating whether the output should be formatted for an MS Word 
+#' @param A trahble object, produced by trahbulate.
+#' @param word Logical indicating whether the output should be formatted for an MS Word .
 #' @param wordstyles Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.
 #'
 #' @return NULL
