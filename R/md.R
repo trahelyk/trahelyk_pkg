@@ -153,6 +153,7 @@ md.trahble <- function(x, word=FALSE, wordstyles=NA) {
   # Reformat the footer for markdown.
   x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
   x$footer <- paste0("_", x$footer, "_")
+  x$footer[x$footer=="_ _"] <- ""
   
   # Print the table caption.
   word_style(word=word, wordstyles=wordstyles, style="tablecaption", cat_txt = paste0(tbls(x$label, x$caption)))
@@ -164,7 +165,7 @@ md.trahble <- function(x, word=FALSE, wordstyles=NA) {
   
   # Print the footer.
   word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
-  cat("<br>")
+  cat("***  <br>")
 }
 
 
