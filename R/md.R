@@ -91,7 +91,7 @@ md.tableone <- function(x, word=FALSE, wordstyles=NA) {
 # -------------------------------------------------------------------------------- 
 # Define a function that displays a tableoneway object in RMarkdown
 # --------------------------------------------------------------------------------
-md.tableoneway <- function(x) {
+md.tableoneway <- function(x, include_n=FALSE) {
   # Reformat +/- in the table
   for(i in 3:ncol(x$table)) {
     x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
@@ -137,7 +137,7 @@ md.tableoneway <- function(x) {
 #' @examples
 md.trahble <- function(x, word=FALSE, wordstyles=NA) {
   # Reformat +/- in the table
-  for(i in 3:5) {
+  for(i in 3:(ncol(x$table)-1)) {
     x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
   }
   

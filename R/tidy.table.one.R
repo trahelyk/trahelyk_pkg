@@ -580,7 +580,7 @@ trahbulate <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simul
     }
     
     # If the variable is categorical, present Ns and percentages
-    if(class(df[[sumvar]])[2] %in% c("logical", "factor")) {
+    if(any(class(df[[sumvar]]) %in% c("logical", "factor"))) {
       
       method <- "pct"
       
