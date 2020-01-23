@@ -165,7 +165,7 @@ md.trahble <- function(x, word=FALSE, wordstyles=NA) {
   
   # Print the footer.
   word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
-  cat("  <br>*****<br>")
+  cat("  <br>*****  <br>")
 }
 
 
