@@ -534,7 +534,7 @@ trahbulate <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simul
     if(label(df[[sumvar]]) == "") label(df[[sumvar]]) <- sumvar
     
     # If the variable is continuous, present either a median or a mean
-    if(class(df[[sumvar]])[2] %in% c("integer", "numeric")) {
+    if(any(class(df[[sumvar]]) %in% c("integer", "numeric"))) {
       # If the user did not specify a measure of center then use a median if the distance between the mean and 
       # median is > 0.25 standard deviations; otherwise use a mean.
       if(test.df$test.type[test.df$col.name==sumvar] == "auto") {
@@ -588,7 +588,7 @@ trahbulate <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simul
       tb <- table(df[[sumvar]], df[[grpvar]])
       
       # Identify level labels:
-      if(class(df[[sumvar]])[2]=="logical") {
+      if(any(class(df[[sumvar]])=="logical")) {
         level.labs <- c("FALSE", "TRUE")
       } else {
         level.labs <- levels(df[[sumvar]])

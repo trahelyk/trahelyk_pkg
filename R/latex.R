@@ -477,3 +477,44 @@ tx.glm <- function(x, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="", c
           sanitize.text.function = identity)
   } else return(mdl.tbl)
 }
+
+#' Display a trahble-based tabulation in LaTeX
+#'
+#' @param A trahble object, produced by trahbulate.
+#'
+#' @return NULL
+#' @export
+#'
+#' @examples
+tx.trahble <- function(x) {
+  # Reformat +/- in the table
+  for(i in 3:(ncol(x$table)-1)) {
+    x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
+  }
+  
+  # Remove the method column
+  x$table$method <- NULL
+  
+  # Bold the table headers in markdown.
+  colnames(x$table)[c(2)] <- paste0("**", colnames(x$table)[c(2)], "**") 
+  colnames(x$table)[3:(ncol(x$table)-1)] <- map_chr(3:(ncol(x$table)-1), 
+                                                    function(i) paste0("**", colnames(x$table)[i], " (n=", x$n[[i-2]], ")**"))
+  colnames(x$table)[ncol(x$table)] <- paste0("**", colnames(x$table)[ncol(x$table)], " (n=", x$n$combined, ")**")
+  
+  # Reformat the footer for markdown.
+  x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
+  x$footer <- paste0("_", x$footer, "_")
+  x$footer[x$footer=="_ _"] <- ""
+  
+  # Print the table caption.
+  word_style(word=word, wordstyles=wordstyles, style="tablecaption", cat_txt = paste0(tbls(x$label, x$caption)))
+  
+  # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
+  print(kable(x$table,
+              format = "markdown",
+              row.names = FALSE))
+  
+  # Print the footer.
+  word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
+  cat("  <br>*****<br>")
+}
