@@ -4,7 +4,7 @@
 \alias{tx.trahble}
 \title{Display a trahble-based tabulation in LaTeX}
 \usage{
-\method{tx}{trahble}(x, size = "footnotesize", d = 3)
+\method{tx}{trahble}(x, size = "footnotesize", d = 3, include_n = FALSE)
 }
 \arguments{
 \item{x}{A trahble object, produced by trahbulate.}

@@ -487,7 +487,7 @@ tx.glm <- function(x, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="", c
 #' @export
 #'
 #' @examples
-tx.trahble <- function(x, size="footnotesize", d=3) {
+tx.trahble <- function(x, size="footnotesize", d=3, include_n=FALSE) {
     
     # Reformat +/- in the table
     for(i in 3:ncol(x$table)-1) {
@@ -500,6 +500,9 @@ tx.trahble <- function(x, size="footnotesize", d=3) {
     
     # Remove the method column
     x$table$method <- NULL
+    
+    # Remove the N column
+    if(!include_n) x$table$n <- NULL
     
     # Bold the table headers in LaTeX.
     colnames(x$table)[c(2)] <- paste0("{\\bf ", colnames(x$table)[c(2)], "}") 
