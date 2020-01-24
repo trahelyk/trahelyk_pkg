@@ -483,6 +483,7 @@ tx.glm <- function(x, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="", c
 #' @param x A trahble object, produced by trahbulate.
 #' @param size Font size
 #' @param d Number of digits to the right of the decimal place for numerics
+#' @param include_n Logical indicating whether the tabulation should include a column showing the number of non-missing observations for each variable
 #' @return NULL
 #' @export
 #'
@@ -524,10 +525,10 @@ tx.trahble <- function(x, size="footnotesize", d=3, include_n=FALSE) {
     addtorow <- list()
     addtorow$pos <- list(0, nrow(x$table))
     
-    addtorow$command <- c(paste0("~ & ~ & ", paste(map_chr(3:ncol(x$table),
-                                                           function(i) paste0("{\\em (n=", x$n[[i-2]], ")}")),
-                                                   collapse = " & "),
-                                 " \\\\"),
+    addtorow$command <- c(paste0("~ & ", paste(map_chr(3:ncol(x$table),
+                                                       function(i) paste0("{\\em (n=", x$n[[i-2]], ")}")),
+                                               collapse = " & "),
+                                 " & {\\em (n=", x$n$combined, ")} \\\\"),
                           paste0("\\hline ", footer))
     
     # Print the table
