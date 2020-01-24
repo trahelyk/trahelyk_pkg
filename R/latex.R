@@ -480,41 +480,61 @@ tx.glm <- function(x, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="", c
 
 #' Display a trahble-based tabulation in LaTeX
 #'
-#' @param A trahble object, produced by trahbulate.
-#'
+#' @param x A trahble object, produced by trahbulate.
+#' @param size Font size
+#' @param d Number of digits to the right of the decimal place for numerics
 #' @return NULL
 #' @export
 #'
 #' @examples
-tx.trahble <- function(x) {
-  # Reformat +/- in the table
-  for(i in 3:(ncol(x$table)-1)) {
-    x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
-  }
-  
-  # Remove the method column
-  x$table$method <- NULL
-  
-  # Bold the table headers in markdown.
-  colnames(x$table)[c(2)] <- paste0("**", colnames(x$table)[c(2)], "**") 
-  colnames(x$table)[3:(ncol(x$table)-1)] <- map_chr(3:(ncol(x$table)-1), 
-                                                    function(i) paste0("**", colnames(x$table)[i], " (n=", x$n[[i-2]], ")**"))
-  colnames(x$table)[ncol(x$table)] <- paste0("**", colnames(x$table)[ncol(x$table)], " (n=", x$n$combined, ")**")
-  
-  # Reformat the footer for markdown.
-  x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
-  x$footer <- paste0("_", x$footer, "_")
-  x$footer[x$footer=="_ _"] <- ""
-  
-  # Print the table caption.
-  word_style(word=word, wordstyles=wordstyles, style="tablecaption", cat_txt = paste0(tbls(x$label, x$caption)))
-  
-  # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
-  print(kable(x$table,
-              format = "markdown",
-              row.names = FALSE))
-  
-  # Print the footer.
-  word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
-  cat("  <br>*****<br>")
+tx.trahble <- function(x, size="footnotesize", d=3) {
+    
+    # Reformat +/- in the table
+    for(i in 3:ncol(x$table)-1) {
+      x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
+      x$table[,i] <- gsub("%", "\\\\%", x$table[,i])
+    }
+    
+    x$table[,1] <- gsub(pattern="<span style='margin-left:30px;'>", replacement="~~~~~~~~~~", x=x$table$` `)
+    x$table[,1] <- gsub(pattern="</span>", replacement="", x=x$table$` `)
+    
+    # Remove the method column
+    x$table$method <- NULL
+    
+    # Bold the table headers in LaTeX.
+    colnames(x$table)[c(2)] <- paste0("{\\bf ", colnames(x$table)[c(2)], "}") 
+    colnames(x$table)[3:(ncol(x$table))] <- map_chr(3:(ncol(x$table)), 
+                                                    function(i) paste0("{\\bf ", colnames(x$table)[i], "}"))
+    # Reformat the footer for LaTeX.
+    x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
+    x$footer <- paste0("\\multicolumn{6}{l}{\\em ", x$footer, "} \\\\ \n ")
+    
+    footer <- ""
+    for(footline in 1:length(x$footer)) {
+      footer <- paste0(footer, x$footer[footline])
+    }
+    
+    xt.out <- xtable(x$table, caption=x$caption, digits=d)
+    align(xt.out) <- paste0("ll", paste(rep("r", ncol(x$table)-1), collapse=""))
+    
+    # Configure header and footer  
+    addtorow <- list()
+    addtorow$pos <- list(0, nrow(x$table))
+    
+    addtorow$command <- c(paste0("~ & ~ & ", paste(map_chr(3:ncol(x$table),
+                                                           function(i) paste0("{\\em (n=", x$n[[i-2]], ")}")),
+                                                   collapse = " & "),
+                                 " \\\\"),
+                          paste0("\\hline ", footer))
+    
+    # Print the table
+    print(xt.out,
+          include.rownames=FALSE,
+          caption.placement="top",
+          floating=TRUE,
+          table.placement="H",
+          add.to.row=addtorow,
+          size=size,
+          hline.after=c(-1, 0),
+          sanitize.text.function = identity)
 }
