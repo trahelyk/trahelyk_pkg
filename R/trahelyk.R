@@ -1,10 +1,40 @@
 options(stringsAsFactors = FALSE)
 default.stringsAsFactors()
 
+
 # Generate n NA values in a vector
 batman <- function(n) {
   return(rep(NA, n))
 }
+
+# Counter
+#' Count observations and number of unique identifiers 
+#'
+#' @param DT A data.table, tibble, or data.frame
+#' @param current_count Previous list created by cnt(), containing the last count
+#' @param guid Name of the globally unique identifier to count
+#'
+#' @return List object containing the number of observations in element one, and the number of unique guids in element two
+#' @export
+#'
+#' @examples
+cnt <- function(DT=0, current_count=NULL, guid=c(getOption("guid"))) {
+  N <- nrow(DT)
+  guids_cnt <- map_int(guid, function(y) {uniqueN(DT[[y]])})
+  
+  cat(paste0("## Count ", deparse(substitute(dtx)), ": \n"))
+  cat(paste0("##  ", N, " observations \n",
+             paste("## ", guids_cnt, "unique", guid, "numbers\n", collapse="")))
+  if(length(current_count)>0) {
+    cat(paste0("\n## \n",
+               "## Change: \n",
+               "##   ", N - current_count$N, " observations \n",
+               "##   ", guids_cnt - current_count$guids_cnt, " unique ", guid, " numbers\n"))
+  }
+  return(invisible(list(N = N,
+                        guids_cnt = guids_cnt)))
+}
+
 
 #' Calculate a standard error
 #' 

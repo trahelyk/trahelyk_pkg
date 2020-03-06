@@ -489,56 +489,66 @@ tx.glm <- function(x, d=3, intercept=FALSE, varnames=NULL, lbl="", caption="", c
 #'
 #' @examples
 tx.trahble <- function(x, size="footnotesize", d=3, include_n=FALSE) {
-    
-    # Reformat +/- in the table
-    for(i in 3:ncol(x$table)-1) {
-      x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
-      x$table[,i] <- gsub("%", "\\\\%", x$table[,i])
-    }
-    
-    x$table[,1] <- gsub(pattern="<span style='margin-left:30px;'>", replacement="~~~~~~~~~~", x=x$table$` `)
-    x$table[,1] <- gsub(pattern="</span>", replacement="", x=x$table$` `)
-    
-    # Remove the method column
-    x$table$method <- NULL
-    
-    # Remove the N column
-    if(!include_n) x$table$n <- NULL
-    
-    # Bold the table headers in LaTeX.
-    colnames(x$table)[c(2)] <- paste0("{\\bf ", colnames(x$table)[c(2)], "}") 
-    colnames(x$table)[3:(ncol(x$table))] <- map_chr(3:(ncol(x$table)), 
-                                                    function(i) paste0("{\\bf ", colnames(x$table)[i], "}"))
-    # Reformat the footer for LaTeX.
-    x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
-    x$footer <- paste0("\\multicolumn{6}{l}{\\em ", x$footer, "} \\\\ \n ")
-    
-    footer <- ""
-    for(footline in 1:length(x$footer)) {
-      footer <- paste0(footer, x$footer[footline])
-    }
-    
-    xt.out <- xtable(x$table, caption=x$caption, digits=d)
-    align(xt.out) <- paste0("ll", paste(rep("r", ncol(x$table)-1), collapse=""))
-    
-    # Configure header and footer  
-    addtorow <- list()
-    addtorow$pos <- list(0, nrow(x$table))
-    
-    addtorow$command <- c(paste0("~ & ", paste(map_chr(3:ncol(x$table),
-                                                       function(i) paste0("{\\em (n=", x$n[[i-2]], ")}")),
-                                               collapse = " & "),
-                                 " & {\\em (n=", x$n$combined, ")} \\\\"),
-                          paste0("\\hline ", footer))
-    
-    # Print the table
-    print(xt.out,
-          include.rownames=FALSE,
-          caption.placement="top",
-          floating=TRUE,
-          table.placement="H",
-          add.to.row=addtorow,
-          size=size,
-          hline.after=c(-1, 0),
-          sanitize.text.function = identity)
+  
+  # Reformat +/- in the table
+  for(i in 3:ncol(x$table)-1) {
+    x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
+    x$table[,i] <- gsub("%", "\\\\%", x$table[,i])
+  }
+  
+  x$table[,1] <- gsub(pattern="<span style='margin-left:30px;'>", replacement="~~~~~~~~~~", x=x$table$` `)
+  x$table[,1] <- gsub(pattern="</span>", replacement="", x=x$table$` `)
+  
+  # Remove the method column
+  x$table$method <- NULL
+  
+  # Remove the N column
+  if(!include_n) {
+    x$table$n <- NULL
+    n_hdr <- paste0("~ & ", paste(map_chr(3:ncol(x$table),
+                                          function(i) paste0("{\\em (n=", x$n[[i-2]], ")}")),
+                                  collapse = " & "),
+                    " & {\\em (n=", x$n$combined, ")} \\\\")
+  } else {
+    n_hdr <- paste0("~ & ~ & ", paste(map_chr(3:ncol(x$table),
+                                              function(i) paste0("{\\em (n=", x$n[[i-2]], ")}")),
+                                      collapse = " & "),
+                    " & {\\em (n=", x$n$combined, ")} \\\\")
+  }
+  
+  # Bold the table headers in LaTeX.
+  colnames(x$table)[c(2)] <- paste0("{\\bf ", colnames(x$table)[c(2)], "}") 
+  colnames(x$table)[3:(ncol(x$table))] <- map_chr(3:(ncol(x$table)), 
+                                                  function(i) paste0("{\\bf ", colnames(x$table)[i], "}"))
+  # Reformat the footer for LaTeX.
+  x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
+  x$footer <- paste0("\\multicolumn{", ncol(x$table), "}{l}{\\em ", x$footer, "} \\\\ \n ")
+  
+  footer <- ""
+  for(footline in 1:length(x$footer)) {
+    footer <- paste0(footer, x$footer[footline])
+  }
+  
+  xt.out <- xtable(x$table, caption=x$caption, digits=d)
+  align(xt.out) <- paste0("ll", paste(rep("r", ncol(x$table)-1), collapse=""))
+  
+  # Configure header and footer  
+  addtorow <- list()
+  addtorow$pos <- list(0, nrow(x$table))
+  
+  
+  
+  addtorow$command <- c(n_hdr,
+                        paste0("\\hline ", footer))
+  
+  # Print the table
+  print(xt.out,
+        include.rownames=FALSE,
+        caption.placement="top",
+        floating=TRUE,
+        table.placement="H",
+        add.to.row=addtorow,
+        size=size,
+        hline.after=c(-1, 0),
+        sanitize.text.function = identity)
 }

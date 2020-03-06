@@ -12,6 +12,8 @@
 \item{size}{Font size}
 
 \item{d}{Number of digits to the right of the decimal place for numerics}
+
+\item{include_n}{Logical indicating whether the tabulation should include a column showing the number of non-missing observations for each variable}
 }
 \description{
 Display a trahble-based tabulation in LaTeX
