@@ -19,8 +19,8 @@ batman <- function(n) {
 #' foo <- rnorm(n=20)
 #' look(foo)
 look <- function(x) {
-  summary(x)
-  sd(x)
+  print(summary(x))
+  print(paste0("SD = ", sd(x)))
 }
 
 # Counter
