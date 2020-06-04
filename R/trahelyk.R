@@ -7,6 +7,22 @@ batman <- function(n) {
   return(rep(NA, n))
 }
 
+
+#' Display a summary and SD of a numeric vector
+#'
+#' @param x 
+#'
+#' @return Summmary and SD
+#' @export
+#'
+#' @examples
+#' foo <- rnorm(n=20)
+#' look(foo)
+look <- function(x) {
+  summary(x)
+  sd(x)
+}
+
 # Counter
 #' Count observations and number of unique identifiers 
 #'
