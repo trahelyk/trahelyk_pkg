@@ -41,9 +41,12 @@ tocase <- function(x, case) {
     return(toupper(x))
   } else if(case %in% c("title", "sentence")) {
     if(case=="title") {
-      s <- strsplit(x, " ")[[1]]
-      return(paste(toupper(substring(s, 1, 1)), tolower(substring(s, 2)),
-                   sep = "", collapse = " "))
+      return(sapply(strsplit(x, " "), 
+                    FUN = function(s) {paste(toupper(substring(s, 1, 1)), 
+                                             tolower(substring(s, 2)),
+                                             sep = "", collapse = " ")
+                    }, 
+                    USE.NAMES = !is.null(names(s))))
     } else if(case=="sentence") {
       return(paste0(toupper(substring(x, 1, 1)), tolower(substring(x, 2))))
     }
