@@ -23,6 +23,33 @@ look <- function(x) {
   print(paste0("SD = ", sd(x)))
 }
 
+#' Change case of a character vector
+#'
+#' @param x a character vector
+#' @param case one of "upper", "lower", "title", or "sentence". 
+#'
+#' @return A character vector of the same length, with the first letter of each word, separated by a space, capitalized. 
+#' @export
+#'
+#' @examples
+#' x <- "the quick BROWN fox jumps over the LaZy Dog."
+#' totitle(x)
+tocase <- function(x, case) {
+  if(case=="lower") {
+    return(tolower(x))
+  } else if(case=="upper") {
+    return(toupper(x))
+  } else if(case %in% c("title", "sentence")) {
+    if(case=="title") {
+      s <- strsplit(x, " ")[[1]]
+      return(paste(toupper(substring(s, 1, 1)), tolower(substring(s, 2)),
+                   sep = "", collapse = " "))
+    } else if(case=="sentence") {
+      return(paste0(toupper(substring(x, 1, 1)), tolower(substring(x, 2))))
+    }
+  }
+}
+
 # Counter
 #' Count observations and number of unique identifiers 
 #'
