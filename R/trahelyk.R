@@ -7,10 +7,33 @@ batman <- function(n) {
   return(rep(NA, n))
 }
 
+#' Determine whether a column in a data frame is unique across all rows
+#'
+#' @param x A data frame
+#' @param guid Name of the column to evaluate for uniqueness
+#' @param quiet Logical. If FALSE, the function echoes the number of unique values of `guid`; if TRUE, it only returns a logical.
+#'
+#' @return Logical indicating whether the guid is unique across rows
+#' @export
+#'
+#' @examples
+#' foo <- tibble(A = c(1, 2, 3, 4, 5),
+#'               B = c("A", "B", "B", "C", "D"))
+#' is_unique(foo, "A")
+#' is_unique(foo, "B")
+is_unique <- function(x, guid, quiet=FALSE) {
+  n_guids <- cnt_distinct(x[[guid]])
+  n_rows <- nrow(x)
+  if(!quiet) {
+    print(paste0("Unique guids: ", n_guids))
+    print(paste0("Rows in data frame: ", n_rows))
+  }
+  return(n_guids == n_rows)
+}
 
 #' Display a summary and SD of a numeric vector
 #'
-#' @param x 
+#' @param x A numeric vector
 #'
 #' @return Summmary and SD
 #' @export
@@ -42,9 +65,11 @@ tocase <- function(x, case) {
   } else if(case %in% c("title", "sentence")) {
     if(case=="title") {
       return(sapply(strsplit(x, " "), 
-                    FUN = function(x) {paste(toupper(substring(x, 1, 1)), 
+                    FUN = function(x) { if(is.na(x[1])) {
+                      return(NA)
+                      } else return(paste(toupper(substring(x, 1, 1)), 
                                              tolower(substring(x, 2)),
-                                             sep = "", collapse = " ")
+                                             sep = "", collapse = " "))
                     }, 
                     USE.NAMES = !is.null(names(x))))
     } else if(case=="sentence") {
@@ -295,7 +320,7 @@ clean.cols <- function(df, na.text="") {
 }
 
 # Count distinct observations in a vector
-cnt.distinct <- function(x) {
+cnt_distinct <- function(x) {
   return(length(unique(x)))
 }
 

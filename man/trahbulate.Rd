@@ -23,7 +23,7 @@ trahbulate(
 
 \item{testTypes}{A vector of length nrow(df) containing "mean" for means and SDs or "median" medians and IQRs; applies only to continuous variables. Leave NULL to allow the function to choose for you based on the distance between the mean and median.}
 
-\item{d}{Number of significant digits to report in numbers in the tableone object.}
+\item{d}{Number of significant digits to report in numbers in the tbl1 object.}
 
 \item{p.digits}{Not used.}
 
@@ -36,7 +36,7 @@ trahbulate(
 \item{caption}{Text to be passed to tx() or md() to caption the table.}
 }
 \value{
-A tableone object that can be formatted by tx() or md().
+A tbl1 object that can be formatted by tx() or md().
 }
 \description{
 Tabulate a set of variables by an N-dimensional grouping variable.

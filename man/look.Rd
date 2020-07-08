@@ -7,7 +7,7 @@
 look(x)
 }
 \arguments{
-\item{x}{}
+\item{x}{A numeric vector}
 }
 \value{
 Summmary and SD

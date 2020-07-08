@@ -1,27 +1,10 @@
 # -------------------------------------------------------------------------------- 
-# Define function for robust Shapiro-Wilks test, despite David's advice against 
-# doing this
-# -------------------------------------------------------------------------------- 
-# sw.test.robust <- function(x, max.ssize = 100, num.tests = 50) {
-#   if(length(x) <= max.ssize) {
-#     pval <- shapiro.test(x)$p.value
-#   } else {
-#     psum <- 0
-#     for(i in 1:num.tests) {
-#       psum <- psum + shapiro.test(head(x[order(runif(length(x)))], max.ssize))$p.value
-#     }
-#     pval <- psum/num.tests
-#   }
-#   return(pval)
-# }
-
-# -------------------------------------------------------------------------------- 
 # Generate new class to hold the return object, comprising a tidy data frame
 # for the summary statistics and a character vector that contains definitions
 # of displays of summary statistics in the main table and a list of methods
 # used to test for differences across groups in each variable.
 # -------------------------------------------------------------------------------- 
-tableone <- function(table, n, footer, caption, label) {
+tbl1 <- function(table, n, footer, caption, label) {
   if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
       !is.character(caption) | !is.character(label)) {
     stop("Wrong data type(s) passed to constructor.")
@@ -30,25 +13,13 @@ tableone <- function(table, n, footer, caption, label) {
                  n=n,
                  footer=footer,
                  caption=caption,
-                 label=label), class = "tableone")
-}
-
-trahble <- function(table, n, footer, caption, label) {
-  if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
-      !is.character(caption) | !is.character(label)) {
-    stop("Wrong data type(s) passed to constructor.")
-  }
-  structure(list(table=table, 
-                 n=n,
-                 footer=footer,
-                 caption=caption,
-                 label=label), class = "trahble")
+                 label=label), class = "tbl1")
 }
 
 # -------------------------------------------------------------------------------- 
 # A similar class, but for one-way tables
 # -------------------------------------------------------------------------------- 
-tableoneway <- function(table, n, footer, caption, label) {
+tbl1w <- function(table, n, footer, caption, label) {
   if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
       !is.character(caption) | !is.character(label)) {
     stop("Wrong data type(s) passed to constructor.")
@@ -57,22 +28,37 @@ tableoneway <- function(table, n, footer, caption, label) {
                  n=n,
                  footer=footer,
                  caption=caption,
-                 label=label), class = "tableoneway")
+                 label=label), class = "tbl1w")
+}
+
+# -------------------------------------------------------------------------------- 
+# A similar class, but for N-way tables
+# -------------------------------------------------------------------------------- 
+tblnw <- function(table, n, footer, caption, label) {
+  if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
+      !is.character(caption) | !is.character(label)) {
+    stop("Wrong data type(s) passed to constructor.")
+  }
+  structure(list(table=table, 
+                 n=n,
+                 footer=footer,
+                 caption=caption,
+                 label=label), class = "tblnw")
 }
 
 
-#' Produces a tableone object, which contains a two-way table grouped by the specificed grouping variable.
+#' Produces a tbl1 object, which contains a two-way table grouped by the specificed grouping variable.
 #' 
 #' @param df A data frame or tibble with Hmisc-brand labels.
 #' @param grpvar The quoted name of a grouping variable that splits df into two cohorts.
 #' @param testTypes A vector of length nrow(df) containing "t" for a t-test or "w" for a Wilcoxon rank-sum test; applies only to continuous variables. Leave NULL to allow the function to choose for you based on the distance between the mean and median. 
-#' @param d Number of significant digits to report in (non-p-value) numbers in the tableone object.
+#' @param d Number of significant digits to report in (non-p-value) numbers in the tbl1 object.
 #' @param p.digits Number of significant digits to report in p-values.
 #' @param fisher.simulate.p If TRUE use simulated p-values for Fisher's exact test. Default is FALSE.
 #' @param trunc_binary If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows, with the variable name and p-value on a row above. Default is TRUE.
 #' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
 #' @param caption Text to be passed to tx() or md() to caption the table. 
-#' @return A tableone object that can be formatted by tx() or md().
+#' @return A tbl1 object that can be formatted by tx() or md().
 #' @examples
 #' foo <- as_tibble(iris) %>% 
 #'   filter(Species!="setosa") %>% 
@@ -82,15 +68,15 @@ tableoneway <- function(table, n, footer, caption, label) {
 #'                    "Petal width",
 #'                    "Species")) %>%
 #'     mutate(Species = fct_drop(Species))
-#' md(tidy.tableone(foo, grpvar="Species"))
+#' md(tableone(foo, grpvar="Species"))
 #' 
-#' md(tidy.tableone(foo, grpvar="Species",
+#' md(tableone(foo, grpvar="Species",
 #'                  testTypes=c("t", "t", "t", "t", "t")))
 #' 
-#' md(tidy.tableone(foo, grpvar="Species",
+#' md(tableone(foo, grpvar="Species",
 #'                  testTypes=c("t", "t", "w", "w", "w")))
 
-make_tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   if (lbl=="") lbl <- an.id(9)
@@ -333,7 +319,7 @@ make_tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
             n.grp2 = nrow(df[!is.na(df[[grpvar]]) & df[[grpvar]]==levels(df[[grpvar]])[2],]),
             n.combined = nrow(df[!is.na(df[[grpvar]]),]))
   
-  return(tableone(table = out,
+  return(tbl1(table = out,
                   n = n,
                   footer = footer,
                   caption = caption,
@@ -342,20 +328,10 @@ make_tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.si
 
 
 
-tableoneway <- function(table, n, footer, caption, label) {
-  if (!is.data.frame(table) | !is.list(n) | !is.vector(footer) | 
-      !is.character(caption) | !is.character(label)) {
-    stop("Wrong data type(s) passed to constructor.")
-  }
-  structure(list(table=table, 
-                 n=n,
-                 footer=footer,
-                 caption=caption,
-                 label=label), class = "tableoneway")
-}
 
 
-#' Produces a tableoneway object, which contains summary statistics without grouping or bivariate tests.
+
+#' Produces a tbl1w object, which contains summary statistics without grouping or bivariate tests.
 #' 
 #' @param df A data frame or tibble with Hmisc-brand labels.
 #' @param testTypes A vector of length nrow(df) containing "t" for a t-test or "w" for a Wilcoxon rank-sum test; applies only to continuous variables. Leave NULL to allow the function to choose for you based on the distance between the mean and median. 
@@ -365,44 +341,47 @@ tableoneway <- function(table, n, footer, caption, label) {
 #' @param trunc_binary If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows. Default is TRUE.
 #' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
 #' @param caption Text to be passed to tx() or md() to caption the table. 
-#' @return A tableoneway object that can be formatted by tx() or md().
+#' @return A tbl1w object that can be formatted by tx() or md().
 #' @examples
 
-make_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
-  #If the user specified a list of summary types of valid length for continuous data, use them; otherwise, set all to "auto".
+  # If the user specified a list of summary types of valid length for continuous data, use them; otherwise, set all to "auto".
   if(length(summaryTypes)!=length(colnames(df))) {
     summaryTypes <- rep("auto", length(colnames(df)))
   }
   
-  summary.df <- data.frame(col.name = colnames(df),
+  summary_df <- data.frame(col.name = colnames(df),
                            summary.type = summaryTypes,
                            stringsAsFactors = FALSE)
   
   # Create the table, beginning with an empty data frame
-  out <- new.df(cols=4)
+  out <- data.frame(matrix(vector(), 0, 4, 
+                           dimnames = list(c(), 
+                                           c(1:4))), 
+                    stringsAsFactors = F)
   for (i in seq_along(colnames(df))) {  
     # Identify the variable to summarize for the current iteration
     sumvar <- colnames(df)[i]
     
-    # Make sure the current variable is labeled; throw an error if it is not.
-    if(class(df[[sumvar]])[1] != "labelled") stop("Must label all covariates.")
+    # Make sure the current variable is labeled; use the variable name if not.
+    if(label(df[[sumvar]]) == "") label(df[[sumvar]]) <- sumvar
     
     # If the variable is continuous, use a median or mean
     if(class(df[[sumvar]])[2] %in% c("integer", "numeric")) {
       # If the user did not specify a summary type then use a median + IQR if the distance between the mean and 
       # median is > 0.25 standard deviations; otherwise use mean +/- SD.
-      if(summary.df$summary.type[summary.df$col.name==sumvar] == "auto") {
+      if(summary_df$summary.type[summary_df$col.name==sumvar] == "auto") {
         if(abs(mean(df[[sumvar]], na.rm=TRUE) - median(df[[sumvar]], na.rm=TRUE))/sd(df[[sumvar]], na.rm=TRUE) <= 0.25) {
-          summary.df$summary.type[summary.df$col.name==sumvar] <- "mean"
+          summary_df$summary.type[summary_df$col.name==sumvar] <- "mean"
         } else {
-          summary.df$summary.type[summary.df$col.name==sumvar] <- "median"
+          summary_df$summary.type[summary_df$col.name==sumvar] <- "median"
         }
       }
       
       # mean +/- SD
-      if(summary.df$summary.type[summary.df$col.name==sumvar]=="mean") {
+      if(summary_df$summary.type[summary_df$col.name==sumvar]=="mean") {
         method <- "Mean"
         newrow <- data.frame(cbind(label(df[[sumvar]]),
                                    sum(!is.na(df[[sumvar]])),
@@ -431,16 +410,12 @@ make_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
     
     # If the variable is categorical, construct a table of proportions
     if(class(df[[sumvar]])[2] %in% c("logical", "factor")) {
-      method <- "Median"
+      method <- "Percent" # Why would i need to do this? 
       
       # Construct a contingency table and run a chi-squared test
       tb <- table(df[[sumvar]])
-      newrow <- data.frame(cbind(label(df[[sumvar]]),
-                                 sum(!is.na(df[[sumvar]])),
-                                 " ", method))
-      names(newrow) <- names(out)
-      out <- rbind(out, newrow)
       
+      # Deal with binary variables
       if(nrow(tb)==2 & trunc_binary) {
         newrow <- data.frame(cbind(label(df[[sumvar]]),
                                    sum(!is.na(df[[sumvar]])),
@@ -448,7 +423,15 @@ make_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
                                    method))
         names(newrow) <- names(out)
         out <- rbind(out, newrow)
+        # Deal with 3+ level categoricals or binaries when trunc_binary = FALSE
       } else { 
+        # Header row
+        newrow <- data.frame(cbind(label(df[[sumvar]]),
+                                   sum(!is.na(df[[sumvar]])),
+                                   " ", method))
+        names(newrow) <- names(out)
+        out <- rbind(out, newrow)
+        
         # Identify level labels:
         if(class(df[[sumvar]])[2]=="logical") {
           level.labs <- c("FALSE", "TRUE")
@@ -486,11 +469,11 @@ make_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
   # Calculate n for each group
   n <- list(n.combined = nrow(df))
   
-  return(tableoneway(table = out %>% select(-Method),
-                     n = n,
-                     footer = footer,
-                     caption = caption,
-                     label = lbl))
+  return(tbl1w(table = out %>% select(-Method),
+               n = n,
+               footer = footer,
+               caption = caption,
+               label = lbl))
 }
 
 
@@ -499,18 +482,18 @@ make_tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simu
 #' @param df A data frame or tibble with Hmisc-brand labels.
 #' @param grpvar The quoted name of a grouping variable that splits df into N cohorts.
 #' @param testTypes A vector of length nrow(df) containing "mean" for means and SDs or "median" medians and IQRs; applies only to continuous variables. Leave NULL to allow the function to choose for you based on the distance between the mean and median. 
-#' @param d Number of significant digits to report in numbers in the tableone object.
+#' @param d Number of significant digits to report in numbers in the tbl1 object.
 #' @param p.digits Not used.
 #' @param fisher.simulate.p Not used.
 #' @param trunc_binary If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows, with the variable name on a row above. Default is TRUE.
 #' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
 #' @param caption Text to be passed to tx() or md() to caption the table. 
 #'
-#' @return A tableone object that can be formatted by tx() or md().
+#' @return A tbl1 object that can be formatted by tx() or md().
 #' @export
 #'
 #' @examples
-trahbulate <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   if (lbl=="") lbl <- an.id(9)
@@ -677,7 +660,7 @@ trahbulate <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simul
   
   names(N) <- c(levels(df[[grpvar]]), "combined")
   
-  return(trahble(table = out,
+  return(tblnw(table = out,
                   n = N,
                   footer = footer,
                   caption = caption,
