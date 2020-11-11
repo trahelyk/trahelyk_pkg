@@ -338,18 +338,39 @@ tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulat
 #' @param d Number of significant digits to report in (non-p-value) numbers in the tableone object.
 #' @param p.digits Number of significant digits to report in p-values.
 #' @param fisher.simulate.p If TRUE use simulated p-values for Fisher's exact test. Default is FALSE.
-#' @param trunc_binary If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows. Default is TRUE.
+#' @param trunc_binary Logical. If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows. Default is TRUE. Alternatively, supply a named list of logicals indicating which variables should be printed on one row. Unnamed variables in the list will be printed on one row. 
 #' @param lbl LaTeX label to be passed to tx() for labeling the table in a LaTeX document.
 #' @param caption Text to be passed to tx() or md() to caption the table. 
 #' @return A tbl1w object that can be formatted by tx() or md().
 #' @examples
 
+
+
 tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   # If the user specified a list of summary types of valid length for continuous data, use them; otherwise, set all to "auto".
-  if(length(summaryTypes)!=length(colnames(df))) {
-    summaryTypes <- rep("auto", length(colnames(df)))
+  st <- rep("auto", length(colnames(df)))
+  if(!is.null(summaryTypes)) {
+    for(i in seq_along(summaryTypes)) {
+      if(!names(summaryTypes)[[i]] %in% colnames(df)) {
+        stop(paste0("Invalid summaryTypes name ", names(summaryTypes)[[i]]))
+      } else {
+        st[colnames(df) == names(summaryTypes)[[i]]] <- summaryTypes[[i]]
+      }
+    }
+  }
+  summaryTypes <- st
+  
+  # Convert trunc_binary to a vector the length of the list of summary variables
+  if(is.logical(trunc_binary)) {
+    trunc_binary <- rep(as.list(trunc_binary), ncol(df))
+    names(trunc_binary) <- colnames(df)
+  } else {
+    missing_cols <- colnames(df)[!colnames(df) %in% names(trunc_binary)]
+    newlist <- rep(as.list(TRUE), length(missing_cols))
+    names(newlist) <- missing_cols
+    trunc_binary <- append(trunc_binary, newlist)
   }
   
   summary_df <- data.frame(col.name = colnames(df),
@@ -412,11 +433,11 @@ tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.
     if(class(df[[sumvar]])[2] %in% c("logical", "factor")) {
       method <- "Percent" # Why would i need to do this? 
       
-      # Construct a contingency table and run a chi-squared test
+      # Construct a contingency table 
       tb <- table(df[[sumvar]])
       
       # Deal with binary variables
-      if(nrow(tb)==2 & trunc_binary) {
+      if(nrow(tb)==2 & trunc_binary[[sumvar]]) {
         newrow <- data.frame(cbind(label(df[[sumvar]]),
                                    sum(!is.na(df[[sumvar]])),
                                    paste0(fmt.pct(tb[2]/sum(tb), latex=FALSE), " (", tb[2], ")"),
@@ -458,7 +479,7 @@ tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.
   colnames(out) <- c(" ", "n", "Percent (N)", "Method")
   
   # Generate footer
-  footer <- c()
+  footer <- c("")
   if("Median" %in% out$Method) {
     footer <- c(footer, "x.x (x.x, x.x) indicates median and inter-quartile range.")
   } 
@@ -496,6 +517,16 @@ tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.
 tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
   df <- as.data.frame(df)
   
+  # Define indentations for HTML vs other types of knitr outputs
+  if(is_html_output()) {
+    indent_start <- "<span style='margin-left:30px;'>"
+    indent_end <- "</span>"
+  } else {
+    indent_start <- " - "
+    indent_end <- ""
+  }
+  
+  # Assign a LaTeX label if there isn't one already
   if (lbl=="") lbl <- an.id(9)
   
   # If the user specified a list of test types of valid length for continuous data, use them; otherwise, set all to "auto".
@@ -598,7 +629,7 @@ tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simula
         
         method <- ""
         for (j in 1:nrow(tb)) {
-          newrow <- data.frame(cbind(paste0("<span style='margin-left:30px;'>", level.labs[j], "</span>"),
+          newrow <- data.frame(cbind(paste0(indent_start, level.labs[j], indent_end),
                                      " ",
                                      suppressWarnings(cnts <- t(map_dfr(seq_along(levels(df[[grpvar]])), 
                                                                         function(lvl) data.frame(cnt = paste0(fmt.pct(tb[j,lvl]/sum(tb[,lvl]), 
@@ -654,7 +685,7 @@ tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simula
   }
   
   # Calculate n for each group
-  N <- map(seq_along(levels(df[[grpvar]])),
+  N <- purrr::map(seq_along(levels(df[[grpvar]])),
            function(i) nrow(df[!is.na(df[[grpvar]]) & df[[grpvar]]==levels(df[[grpvar]])[i],]))
   N$combined <- nrow(df[!is.na(df[[grpvar]]),])
   

@@ -7,6 +7,25 @@ batman <- function(n) {
   return(rep(NA, n))
 }
 
+#' Remove all Hmisc labels from a data frame
+#'
+#' @param x Data frame to clean
+#'
+#' @return Data frame
+#' @export
+clear_labels <- function(x) {
+  if(is.list(x)) {
+    for(i in seq_along(x)) {
+      class(x[[i]]) <- setdiff(class(x[[i]]), 'labelled') 
+      attr(x[[i]],"label") <- NULL
+    } 
+  } else {
+    class(x) <- setdiff(class(x), "labelled")
+    attr(x, "label") <- NULL
+  }
+  return(x)
+}
+
 #' Determine whether a column in a data frame is unique across all rows
 #'
 #' @param x A data frame
@@ -93,7 +112,7 @@ cnt <- function(DT=0, current_count=NULL, guid=c(getOption("guid"))) {
   N <- nrow(DT)
   guids_cnt <- map_int(guid, function(y) {uniqueN(DT[[y]])})
   
-  cat(paste0("## Count ", deparse(substitute(dtx)), ": \n"))
+  cat(paste0("## Count ", deparse(substitute(DT)), ": \n"))
   cat(paste0("##  ", N, " observations \n",
              paste("## ", guids_cnt, "unique", guid, "numbers\n", collapse="")))
   if(length(current_count)>0) {
@@ -267,22 +286,26 @@ laglead<-function(x,shift_by){
   out
 }
 
-
-#' Apply Hmisc-brand labels to all variables in a dataframe or tibble
+#' Apply Hmisc-brand labels to one or more variables in a dataframe or tibble
 #' 
 #' @param df A data frame or tibble.
-#' @param labels A vector of quoted label of length ncol(df).
+#' @param ... Name-value pairs of column names and labels
 #' @return A data frame or tibble.
 #' @examples
 #' foo <- tibble(a = c(1,2,3),
 #'               b = c(4, 5,6)) %>%
-#'   apply_labels(c("A", "B"))
+#'   apply_labels(a = "A", 
+#'                b = "B"))
 #' label(foo)
-apply.labels <- function(df, labels) {
-  for(i in 1:length(df)) {
-    Hmisc::label(df[[i]]) <- labels[i]
+apply_labels <- function(x, ...) {
+  var_list <- names(list(...))
+  var_lbls <- list(...) %>% unlist() %>% as.vector()
+  
+  for(i in seq_along(var_list)) {
+    Hmisc::label(x[[var_list[i]]]) <- var_lbls[i]
   }
-  return(df)
+  
+  return(x)
 }
 
 #' Apply an Hmisc-brand label to a single variable in a dataframe or tibble
@@ -303,21 +326,6 @@ apply_label <- function(df, x, lbl) {
   return(df)
 }
 
-# Replace a particular character in an entire data frame
-replace.df <- function(df, find, replace="") {
-  for(col in colnames(df)) {
-    df[[col]] <- gsub(find, replace, df[[col]])
-  }
-  return(df)
-}
-
-# Clean up columns with "" values
-clean.cols <- function(df, na.text="") {
-  for(col in colnames(df)) {
-    df[[col]][df[[col]]==na.text] <- NA
-  }
-  return(df)
-}
 
 # Count distinct observations in a vector
 cnt_distinct <- function(x) {

@@ -138,7 +138,7 @@ present_mdl.default <- function(mdl, coef.head="", link=identity, footer=c(), d=
 #' @param caption Caption to print above the table. 
 
 #' @return A formatted LaTeX table containing estimates of model parameters and some simple fit statistics.
-present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", footer=c(), caption="") {
+present_mdl.lm <- function(mdl, d=3, coef.head="Coefficient", intercept=TRUE, varnames=NULL, lbl="", footer=c(), caption="", latex=TRUE) {
   # Reformat the model fit statistics
   mdl.fit <- glance(mdl)
   
@@ -150,14 +150,15 @@ present_mdl.lm <- function(mdl, d=3, intercept=TRUE, varnames=NULL, lbl="", foot
               fmt.pval(mdl.fit$p.value, digits=d, latex=TRUE))
   
   present_mdl.default(mdl = mdl,
-                          coef.head,
-                          link = identity,
-                          footer = footer,
-                          d = d,
-                          intercept = intercept,
-                          varnames = varnames,
-                          lbl = lbl,
-                          caption = caption)
+                      coef.head,
+                      link = identity,
+                      footer = footer,
+                      d = d,
+                      intercept = intercept,
+                      varnames = varnames,
+                      lbl = lbl,
+                      caption = caption,
+                      latex = latex)
 }
 
 #' Format and present a LaTeX table that summarizes a glm model object

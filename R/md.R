@@ -42,6 +42,8 @@ word_style <- function(word, wordstyles, style, cat_txt) {
 #' Display a tableone table in RMarkdown
 #'
 #' @param A tableone object, produced by make_tableone
+#' @param include_n If TRUE, the table include non-missing sample size for each row.
+#' @param include_p If TRUE, the table includes p-values for each comparison. 
 #' @param word Logical indicating whether the output should be formatted for an MS Word 
 #' @param wordstyles Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.
 #'
@@ -49,7 +51,7 @@ word_style <- function(word, wordstyles, style, cat_txt) {
 #' @export
 #'
 #' @examples
-md.tbl1 <- function(x, word=FALSE, wordstyles=NA) {
+md.tbl1 <- function(x, include_n=TRUE, include_p=FALSE, word=FALSE, wordstyles=NA) {
   # Combine the method with the p-value and format it as a superscript.
   x$table$p <- paste0(x$table$p, "^", x$table$method, "^")
   x$table$method <- NULL
@@ -78,6 +80,12 @@ md.tbl1 <- function(x, word=FALSE, wordstyles=NA) {
   # Print the table caption.
   word_style(word=word, wordstyles=wordstyles, style="tablecaption", cat_txt = paste0(tbls(x$label, x$caption)))
   
+  # Remove n column if specified
+  if(!include_n) x$table <- x$table[,c(1, 3:ncol(x$table))]
+  
+  # Repove p column if specified
+  if(!include_p) x$table <- x$table[,1:(ncol(x$table)-1)]
+  
   # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
   print(kable(x$table,
               format = "markdown",
@@ -92,13 +100,18 @@ md.tbl1 <- function(x, word=FALSE, wordstyles=NA) {
 # Define a function that displays a tableoneway object in RMarkdown
 # --------------------------------------------------------------------------------
 md.tbl1w <- function(x, include_n=FALSE) {
-  # Reformat +/- in the table
+  # Reformat +/- in the table 
   for(i in 3:ncol(x$table)) {
     x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
   }
   
+  # Change indent character if LaTeX output
+  if(is_latex_output()) {
+    x$table[,1] <- gsub("^ - ", "$~~~~~$", x$table[,1])
+  }
+  
   # Bold the table headers in markdown.
-  colnames(x$table)[c(2,3)] <- paste0("**", colnames(x$table)[c(2,6)], "**") 
+  colnames(x$table)[c(2,3)] <- paste0("**", colnames(x$table)[c(2,3)], "**") 
   
   # Reformat the footer for markdown.
   for(l in letters[1:10]) {
@@ -121,7 +134,8 @@ md.tbl1w <- function(x, include_n=FALSE) {
               row.names = FALSE))
   
   # Print the footer.
-  cat("\n***\n", x$footer, sep="  \n")
+  cat(x$footer, sep="  \n")
+  # cat("\n***\n", x$footer, sep="  \n")
   cat("<br>")
 }
 
@@ -135,10 +149,15 @@ md.tbl1w <- function(x, include_n=FALSE) {
 #' @export
 #'
 #' @examples
-md.tblnw <- function(x, word=FALSE, wordstyles=NA) {
+md.tblnw <- function(x, include_n=FALSE, word=FALSE, wordstyles=NA) {
   # Reformat +/- in the table
   for(i in 3:(ncol(x$table)-1)) {
     x$table[,i] <- gsub("\\+/-", "$\\\\pm$", x$table[,i])
+  }
+  
+  # Change indent character if LaTeX output
+  if(is_latex_output()) {
+    x$table[,1] <- gsub("^ - ", "$~~~~~$- ", x$table[,1])
   }
   
   # Remove the method column
@@ -158,6 +177,11 @@ md.tblnw <- function(x, word=FALSE, wordstyles=NA) {
   # Print the table caption.
   word_style(word=word, wordstyles=wordstyles, style="tablecaption", cat_txt = paste0(tbls(x$label, x$caption)))
   
+  # Suppress the "n" column if specified
+  if(!include_n) {
+    x$table <- x$table %>% select(-`**n**`)
+  }
+  
   # Print the table. Note that we must wrap kable in a print function if we want to have a footer (weirdness with the kable function).
   print(kable(x$table,
               format = "markdown",
@@ -165,7 +189,7 @@ md.tblnw <- function(x, word=FALSE, wordstyles=NA) {
   
   # Print the footer.
   word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
-  cat("  <br>*****  <br>")
+  # cat("  <br>*****  <br>")
 }
 
 

@@ -24,7 +24,7 @@ tableoneway(
 
 \item{fisher.simulate.p}{If TRUE use simulated p-values for Fisher's exact test. Default is FALSE.}
 
-\item{trunc_binary}{If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows. Default is TRUE.}
+\item{trunc_binary}{Logical. If TRUE print only one row for categorical variables with 2 levels. If FALSE, binary variables are printed on two rows. Default is TRUE. Alternatively, supply a named list of logicals indicating which variables should be printed on one row. Unnamed variables in the list will be printed on one row.}
 
 \item{lbl}{LaTeX label to be passed to tx() for labeling the table in a LaTeX document.}
 

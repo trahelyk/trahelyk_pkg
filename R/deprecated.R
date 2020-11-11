@@ -3,6 +3,42 @@
 # remain a part of the package for backward compatibility.
 ####################################################################################################
 
+
+#' Apply Hmisc-brand labels to all variables in a dataframe or tibble. Deprecated in favor of apply_lables.
+#' 
+#' @param df A data frame or tibble.
+#' @param labels A vector of quoted label of length ncol(df).
+#' @return A data frame or tibble.
+#' @examples
+#' foo <- tibble(a = c(1,2,3),
+#'               b = c(4, 5,6)) %>%
+#'   apply_labels(c("A", "B"))
+#' label(foo)
+apply.labels <- function(df, labels) {
+  for(i in 1:length(df)) {
+    Hmisc::label(df[[i]]) <- labels[i]
+  }
+  return(df)
+}
+
+# Replace a particular character in an entire data frame
+replace.df <- function(df, find, replace="") {
+  for(col in colnames(df)) {
+    df[[col]] <- gsub(find, replace, df[[col]])
+  }
+  return(df)
+}
+
+# Clean up columns with "" values
+clean.cols <- function(df, na.text="") {
+  for(col in colnames(df)) {
+    df[[col]][df[[col]]==na.text] <- NA
+  }
+  return(df)
+}
+
+
+
 # I used to use this to set knitr options in a literate document header. 
 chunk_opts <- function(prefix="") {
   options(stringsAsFactors = FALSE)
