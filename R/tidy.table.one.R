@@ -629,7 +629,7 @@ tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simula
         
         method <- ""
         for (j in 1:nrow(tb)) {
-          newrow <- data.frame(cbind(paste0(indent_start, level.labs[j], indent_end),
+          newrow <- data.frame(cbind(paste0(level.labs[j]),
                                      " ",
                                      suppressWarnings(cnts <- t(map_dfr(seq_along(levels(df[[grpvar]])), 
                                                                         function(lvl) data.frame(cnt = paste0(fmt.pct(tb[j,lvl]/sum(tb[,lvl]), 

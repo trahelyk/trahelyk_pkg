@@ -92,7 +92,8 @@ tocase <- function(x, case) {
                     }, 
                     USE.NAMES = !is.null(names(x))))
     } else if(case=="sentence") {
-      return(paste0(toupper(substring(x, 1, 1)), tolower(substring(x, 2))))
+      return(na_if(paste0(toupper(substring(x, 1, 1)), tolower(substring(x, 2))), 
+                   "NANA"))
     }
   }
 }
