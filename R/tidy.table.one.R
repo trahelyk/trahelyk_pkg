@@ -514,7 +514,7 @@ tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.
 #' @export
 #'
 #' @examples
-tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
+tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, combined=FALSE, lbl="", caption="") {
   df <- as.data.frame(df)
   
   # Define indentations for HTML vs other types of knitr outputs
@@ -690,6 +690,8 @@ tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simula
   N$combined <- nrow(df[!is.na(df[[grpvar]]),])
   
   names(N) <- c(levels(df[[grpvar]]), "combined")
+  
+  if(!combined) out %<>% select(-Combined)
   
   return(tblnw(table = out,
                   n = N,

@@ -2,17 +2,17 @@
 % Please edit documentation in R/md.R
 \name{md.tblnw}
 \alias{md.tblnw}
-\title{Display a trahble-based tabulation in RMarkdown}
+\title{Display an N-way tabulation in RMarkdown}
 \usage{
-\method{md}{tblnw}(x, word = FALSE, wordstyles = NA)
+\method{md}{tblnw}(x, include_n = FALSE, word = FALSE, wordstyles = NA)
 }
 \arguments{
 \item{word}{Logical indicating whether the output should be formatted for an MS Word .}
 
 \item{wordstyles}{Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.}
 
-\item{A}{trahble object, produced by trahbulate.}
+\item{A}{tblnw object, produced by tablenway().}
 }
 \description{
-Display a trahble-based tabulation in RMarkdown
+Display an N-way tabulation in RMarkdown
 }

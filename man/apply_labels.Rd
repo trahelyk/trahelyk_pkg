@@ -4,12 +4,12 @@
 \alias{apply_labels}
 \title{Apply Hmisc-brand labels to one or more variables in a dataframe or tibble}
 \usage{
-apply_labels(df, ...)
+apply_labels(x, ...)
 }
 \arguments{
-\item{df}{A data frame or tibble.}
-
 \item{...}{Name-value pairs of column names and labels}
+
+\item{df}{A data frame or tibble.}
 }
 \value{
 A data frame or tibble.

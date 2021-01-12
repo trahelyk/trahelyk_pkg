@@ -12,6 +12,7 @@ tablenway(
   p.digits = 3,
   fisher.simulate.p = FALSE,
   trunc_binary = TRUE,
+  combined = FALSE,
   lbl = "",
   caption = ""
 )

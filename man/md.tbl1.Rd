@@ -4,9 +4,13 @@
 \alias{md.tbl1}
 \title{Display a tableone table in RMarkdown}
 \usage{
-\method{md}{tbl1}(x, word = FALSE, wordstyles = NA)
+\method{md}{tbl1}(x, include_n = TRUE, include_p = FALSE, word = FALSE, wordstyles = NA)
 }
 \arguments{
+\item{include_n}{If TRUE, the table include non-missing sample size for each row.}
+
+\item{include_p}{If TRUE, the table includes p-values for each comparison.}
+
 \item{word}{Logical indicating whether the output should be formatted for an MS Word}
 
 \item{wordstyles}{Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.}

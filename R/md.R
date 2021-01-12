@@ -139,9 +139,9 @@ md.tbl1w <- function(x, include_n=FALSE) {
   cat("<br>")
 }
 
-#' Display a trahble-based tabulation in RMarkdown
+#' Display an N-way tabulation in RMarkdown
 #'
-#' @param A trahble object, produced by trahbulate.
+#' @param A tblnw object, produced by tablenway().
 #' @param word Logical indicating whether the output should be formatted for an MS Word .
 #' @param wordstyles Name of the MS Word stylesheet to be used for formatting. NA if word==FALSE.
 #'

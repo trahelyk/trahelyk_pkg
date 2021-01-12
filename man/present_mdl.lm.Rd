@@ -7,11 +7,13 @@
 \method{present_mdl}{lm}(
   mdl,
   d = 3,
+  coef.head = "Coefficient",
   intercept = TRUE,
   varnames = NULL,
   lbl = "",
   footer = c(),
-  caption = ""
+  caption = "",
+  latex = TRUE
 )
 }
 \arguments{
