@@ -287,6 +287,26 @@ laglead<-function(x,shift_by){
   out
 }
 
+#' Apply a character vector as labels for a data frame
+#'
+#' @param df 
+#' @param labels 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' foo <- tibble(a = c(1,2,3),
+#'               b = c(4,5,6)) %>%
+#'   apply_label_vector(c("A", "B))
+#' label(foo)
+apply_label_vector <- function(df, labels) {
+  for(i in 1:length(df)) {
+    Hmisc::label(df[[i]]) <- labels[i]
+  }
+  return(df)
+}
+
 #' Apply Hmisc-brand labels to one or more variables in a dataframe or tibble
 #' 
 #' @param df A data frame or tibble.

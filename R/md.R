@@ -166,8 +166,8 @@ md.tblnw <- function(x, include_n=FALSE, word=FALSE, wordstyles=NA) {
   # Bold the table headers in markdown.
   colnames(x$table)[c(2)] <- paste0("**", colnames(x$table)[c(2)], "**") 
   colnames(x$table)[3:(ncol(x$table)-1)] <- map_chr(3:(ncol(x$table)-1), 
-                                                    function(i) paste0("**", colnames(x$table)[i], " (n=", x$n[[i-2]], ")**"))
-  colnames(x$table)[ncol(x$table)] <- paste0("**", colnames(x$table)[ncol(x$table)], " (n=", x$n$combined, ")**")
+                                                    function(i) paste0("**", colnames(x$table)[i], " (n=", scales::comma(x$n[[i-2]]), ")**"))
+  colnames(x$table)[ncol(x$table)] <- paste0("**", colnames(x$table)[ncol(x$table)], " (n=", scales::comma(x$n$combined), ")**")
   
   # Reformat the footer for markdown.
   x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
