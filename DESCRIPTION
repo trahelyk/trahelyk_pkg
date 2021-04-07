@@ -2,13 +2,14 @@ Package: trahelyk
 Type: Package
 Title: A collection of tools, mostly for formatting output for dynamic documents
 Version: 1.01
-Date: 2018-09-26
+Date: 2021-01-22
 Author: Kyle D Hart
 Maintainer: Kyle D Hart <hartky@ohsu.edu>
 Description: A collection of tools, mostly for formatting output for dynamic documents
 License: GPL
-Depends: xtable, Hmisc, lubridate, broom, GlobalOptions, dplyr, magrittr, janitor, stringr, knitr, purrr, data.table
-RoxygenNote: 7.0.2
-Imports: pROC,
+Depends: Hmisc, dplyr, magrittr, ggplot2, lubridate, broom, stringr, purrr, knitr, janitor, data.table, pROC,
     captioner,
-    gmodels
+    gmodels,
+    GlobalOptions
+RoxygenNote: 7.1.1
+Imports: 

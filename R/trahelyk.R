@@ -88,7 +88,8 @@ tocase <- function(x, case) {
                       return(NA)
                       } else return(paste(toupper(substring(x, 1, 1)), 
                                              tolower(substring(x, 2)),
-                                             sep = "", collapse = " "))
+                                             sep = "", collapse = " ") %>%
+                                      stringr::str_replace_all(pattern = " [Oo][Ff] ", " of "))
                     }, 
                     USE.NAMES = !is.null(names(x))))
     } else if(case=="sentence") {

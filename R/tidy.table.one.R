@@ -691,7 +691,10 @@ tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simula
   
   names(N) <- c(levels(df[[grpvar]]), "combined")
   
-  if(!combined) out %<>% select(-Combined)
+  if(!combined) {
+    out %<>% select(-Combined)
+    N[["combined"]] <- NULL
+  }
   
   return(tblnw(table = out,
                   n = N,

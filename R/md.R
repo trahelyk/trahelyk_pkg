@@ -1,12 +1,11 @@
 # -------------------------------------------------------------------------------- 
 # Define counter functions for tables and figures
 # --------------------------------------------------------------------------------
-library("captioner")
-tbls <- captioner(prefix="Table")
+tbls <- captioner::captioner(prefix="Table")
 tblcap <- function(caption, name=an.id(10)) {
   tbls(name=name, caption=caption)
 }
-figs <- captioner(prefix="Figure")
+figs <- captioner::captioner(prefix="Figure")
 figcap <- function(caption, name=an.id(10)) {
   figs(name=name, caption=caption)
 }
@@ -21,7 +20,7 @@ vspace <- function(x) {
 # -------------------------------------------------------------------------------- 
 # Define a generic function for formatting things in RMarkdown
 # --------------------------------------------------------------------------------
-md <- function(x, word=FALSE, row.names=FALSE, ...) UseMethod("md")
+md <- function(x, word=FALSE, row.names=FALSE, ...) UseMethod("md", x)
 md.default <- function(x) {
   print(x)
 }
@@ -49,8 +48,6 @@ word_style <- function(word, wordstyles, style, cat_txt) {
 #'
 #' @return Side effects.
 #' @export
-#'
-#' @examples
 md.tbl1 <- function(x, include_n=TRUE, include_p=FALSE, word=FALSE, wordstyles=NA) {
   # Combine the method with the p-value and format it as a superscript.
   x$table$p <- paste0(x$table$p, "^", x$table$method, "^")
@@ -147,8 +144,7 @@ md.tbl1w <- function(x, include_n=FALSE) {
 #'
 #' @return NULL
 #' @export
-#'
-#' @examples
+
 md.tblnw <- function(x, include_n=FALSE, word=FALSE, wordstyles=NA) {
   # Reformat +/- in the table
   for(i in 3:(ncol(x$table)-1)) {
@@ -163,11 +159,19 @@ md.tblnw <- function(x, include_n=FALSE, word=FALSE, wordstyles=NA) {
   # Remove the method column
   x$table$method <- NULL
   
+  # If there's no 'combined' column, create a ghost 
+  if(is.null(x$table$combined)) {
+    x$table$combined <- x$table[,ncol(x$table)]
+  }
+  
   # Bold the table headers in markdown.
   colnames(x$table)[c(2)] <- paste0("**", colnames(x$table)[c(2)], "**") 
   colnames(x$table)[3:(ncol(x$table)-1)] <- map_chr(3:(ncol(x$table)-1), 
                                                     function(i) paste0("**", colnames(x$table)[i], " (n=", scales::comma(x$n[[i-2]]), ")**"))
   colnames(x$table)[ncol(x$table)] <- paste0("**", colnames(x$table)[ncol(x$table)], " (n=", scales::comma(x$n$combined), ")**")
+  
+  # Remove the 'combined' ghost
+  x$table[,ncol(x$table)] <- NULL
   
   # Reformat the footer for markdown.
   x$footer <- gsub("\\+/-", "$\\\\pm$", x$footer)
@@ -191,7 +195,6 @@ md.tblnw <- function(x, include_n=FALSE, word=FALSE, wordstyles=NA) {
   word_style(word=word, wordstyles=wordstyles, style="tablefooter", cat_txt = x$footer)
   # cat("  <br>*****  <br>")
 }
-
 
 # -------------------------------------------------------------------------------- 
 # Wrap a data frame in RMarkdown
