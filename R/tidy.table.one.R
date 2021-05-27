@@ -702,3 +702,4 @@ tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simula
                   caption = caption,
                   label = lbl))
 }
+
