@@ -343,11 +343,8 @@ tableone <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simulat
 #' @param caption Text to be passed to tx() or md() to caption the table. 
 #' @return A tbl1w object that can be formatted by tx() or md().
 #' @examples
-
-
-
 tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.p=FALSE, trunc_binary=TRUE, lbl="", caption="") {
-  df <- as.data.frame(df)
+  df %<>% as_tibble()
   
   # If the user specified a list of summary types of valid length for continuous data, use them; otherwise, set all to "auto".
   st <- rep("auto", length(colnames(df)))
@@ -373,124 +370,95 @@ tableoneway <- function(df, summaryTypes=NULL, d=1, p.digits=3, fisher.simulate.
     trunc_binary <- append(trunc_binary, newlist)
   }
   
-  summary_df <- data.frame(col.name = colnames(df),
-                           summary.type = summaryTypes,
-                           stringsAsFactors = FALSE)
+  summary_df <- tibble(col_name = colnames(df),
+                       summary_type = summaryTypes)
   
-  # Create the table, beginning with an empty data frame
-  out <- data.frame(matrix(vector(), 0, 4, 
-                           dimnames = list(c(), 
-                                           c(1:4))), 
-                    stringsAsFactors = F)
-  for (i in seq_along(colnames(df))) {  
-    # Identify the variable to summarize for the current iteration
-    sumvar <- colnames(df)[i]
-    
-    # Make sure the current variable is labeled; use the variable name if not.
-    if(label(df[[sumvar]]) == "") label(df[[sumvar]]) <- sumvar
-    
-    # If the variable is continuous, use a median or mean
-    if(class(df[[sumvar]])[2] %in% c("integer", "numeric")) {
-      # If the user did not specify a summary type then use a median + IQR if the distance between the mean and 
-      # median is > 0.25 standard deviations; otherwise use mean +/- SD.
-      if(summary_df$summary.type[summary_df$col.name==sumvar] == "auto") {
-        if(abs(mean(df[[sumvar]], na.rm=TRUE) - median(df[[sumvar]], na.rm=TRUE))/sd(df[[sumvar]], na.rm=TRUE) <= 0.25) {
-          summary_df$summary.type[summary_df$col.name==sumvar] <- "mean"
-        } else {
-          summary_df$summary.type[summary_df$col.name==sumvar] <- "median"
-        }
-      }
-      
-      # mean +/- SD
-      if(summary_df$summary.type[summary_df$col.name==sumvar]=="mean") {
-        method <- "Mean"
-        newrow <- data.frame(cbind(label(df[[sumvar]]),
-                                   sum(!is.na(df[[sumvar]])),
-                                   paste0(rnd(mean(df[, c(sumvar)], na.rm=TRUE), d=d), 
-                                          " +/- ", 
-                                          rnd(sd(df[, c(sumvar)], na.rm=TRUE), d=d)),
-                                   method))
-        names(newrow) <- names(out)
-        out <- rbind(out, newrow)
-      } else {
-        # Median +/- IQR
-        method <- "Median"
-        newrow <- data.frame(cbind(label(df[[sumvar]]),
-                                   sum(!is.na(df[[sumvar]])),
-                                   paste0(rnd(median(df[, c(sumvar)], na.rm=TRUE), d=d), 
-                                          " (", 
-                                          rnd(quantile(df[, c(sumvar)], 0.25, na.rm=TRUE), d=d),
-                                          ", ",
-                                          rnd(quantile(df[, c(sumvar)], 0.75, na.rm=TRUE), d=d),
-                                          ")"),
-                                   method))
-        names(newrow) <- names(out)
-        out <- rbind(out, newrow)
-      }
-    }
-    
-    # If the variable is categorical, construct a table of proportions
-    if(class(df[[sumvar]])[2] %in% c("logical", "factor")) {
-      method <- "Percent" # Why would i need to do this? 
-      
-      # Construct a contingency table 
-      tb <- table(df[[sumvar]])
-      
-      # Deal with binary variables
-      if(nrow(tb)==2 & trunc_binary[[sumvar]]) {
-        newrow <- data.frame(cbind(label(df[[sumvar]]),
-                                   sum(!is.na(df[[sumvar]])),
-                                   paste0(fmt.pct(tb[2]/sum(tb), latex=FALSE), " (", tb[2], ")"),
-                                   method))
-        names(newrow) <- names(out)
-        out <- rbind(out, newrow)
-        # Deal with 3+ level categoricals or binaries when trunc_binary = FALSE
-      } else { 
-        # Header row
-        newrow <- data.frame(cbind(label(df[[sumvar]]),
-                                   sum(!is.na(df[[sumvar]])),
-                                   " ", method))
-        names(newrow) <- names(out)
-        out <- rbind(out, newrow)
-        
-        # Identify level labels:
-        if(class(df[[sumvar]])[2]=="logical") {
-          level.labs <- c("FALSE", "TRUE")
-        } else {
-          level.labs <- levels(df[[sumvar]])
-        }
-        
-        for (j in 1:nrow(tb)) {
-          newrow <- data.frame(cbind(paste0(" - ", level.labs[j]),
-                                     " ",
-                                     paste0(fmt.pct(sum(tb[j])/sum(tb), latex=FALSE), " (", sum(tb[j]), ")"),
-                                     " "))
-          names(newrow) <- names(out)
-          out <- rbind(out, newrow)
-        }
-      }
-    }
-  }
-  
-  for (l in 1:ncol(out)) {
-    out[,l] <- as.character(out[,l])
-  }
-  
-  colnames(out) <- c(" ", "n", "Percent (N)", "Method")
+  out <- map_dfr(colnames(df), 
+                 function(cn) {
+                   # Make sure the current variable is labeled; use the variable name if not.
+                   if(label(df[[cn]]) == "") label(df[[cn]]) <- cn
+                   
+                   # CONTINUOUS VARIABLES
+                   if(class(df[[cn]])[2] %in% c("integer", "numeric")) {
+                     # If the user did not specify a summary type then just use a mean
+                     summary_df %<>%
+                       mutate(summary_type = case_when(col_name == cn & summary_type == "auto" ~ "mean",
+                                                       TRUE ~ summary_type))
+                     # mean +/- SD
+                     if(summary_df$summary_type[summary_df$col_name==cn]=="mean") {
+                       method <- "Mean"
+                       newrow <- tibble(var = label(df[[cn]]),
+                                        n = as.character(sum(!is.na(df[[cn]]))),
+                                        summary = paste0(rnd(mean(df %>% pull(cn), na.rm=TRUE), d=d), 
+                                                         " +/- ", 
+                                                         rnd(sd(df %>% pull(cn), na.rm=TRUE), d=d)),
+                                        method = method)
+                     } else {
+                       # Median +/- IQR
+                       method <- "Median"
+                       newrow <- tibble(var = label(df[[cn]]),
+                                        n = as.character(sum(!is.na(df[[cn]]))),
+                                        summary = paste0(rnd(median(df %>% pull(cn), na.rm=TRUE), d=d), 
+                                                         " (", 
+                                                         rnd(quantile(df %>% pull(cn), 0.25, na.rm=TRUE), d=d),
+                                                         ", ",
+                                                         rnd(quantile(df %>% pull(cn), 0.75, na.rm=TRUE), d=d),
+                                                         ")"),
+                                        method = method)
+                       names(newrow) <- names(out)
+                     }
+                   } else { 
+                     # CATEGORICAL VARIABLES
+                     if(class(df[[cn]])[2] %in% c("logical", "factor")) {
+                       method <- "Percent" # Why would i need to do this? 
+                       
+                       # Construct a contingency table 
+                       tb <- table(df[[cn]])
+                       
+                       # Binary variables
+                       if(nrow(tb)==2 & trunc_binary[[cn]]) {
+                         newrow <- tibble(var = label(df[[cn]]),
+                                          n = as.character(sum(!is.na(df[[cn]]))),
+                                          summary = paste0(fmt.pct(tb[2]/sum(tb), latex=FALSE), " (", tb[2], ")"),
+                                          method = method)
+                         
+                         # Variables with 3+ level categoricals or binaries when trunc_binary = FALSE
+                       } else { 
+                         # Header row
+                         newrow <- tibble(var = label(df[[cn]]),
+                                          n = as.character(sum(!is.na(df[[cn]]))),
+                                          summary =  " ", 
+                                          method = method) %>%
+                           bind_rows(map_dfr(if(class(df[[cn]])[2]=="logical") { # Identify level labels
+                             c("FALSE", "TRUE")
+                           } else {
+                             levels(df[[cn]])
+                           },
+                           function(lvl) { # Add one row for each level
+                             tibble(var = paste0(" ", lvl),
+                                    n = " ",
+                                    summary = paste0(fmt.pct(sum(tb[lvl])/sum(tb), latex=FALSE), " (", sum(tb[lvl]), ")"),
+                                    method = " ")
+                           }))
+                       }
+                     }
+                   }
+                   return(newrow)
+                 })
   
   # Generate footer
   footer <- c("")
-  if("Median" %in% out$Method) {
+  if("Median" %in% out$method) {
     footer <- c(footer, "x.x (x.x, x.x) indicates median and inter-quartile range.")
   } 
-  if("Mean" %in% out$Method) {
+  if("Mean" %in% out$method) {
     footer <- c(footer, "x +/- x indicates mean +/- standard deviation.")
   }
   
   # Calculate n for each group
   n <- list(n.combined = nrow(df))
   
-  return(tbl1w(table = out %>% select(-Method),
+  return(tbl1w(table = out %>% select(-method),
                n = n,
                footer = footer,
                caption = caption,
@@ -573,12 +541,12 @@ tablenway <- function(df, grpvar, testTypes=NULL, d=1, p.digits=3, fisher.simula
         suppressWarnings(center <- map_dfr(levels(df[[grpvar]]), 
                                            function(lvl) data.frame(ctr = paste0(rnd(median(df[[sumvar]][df[[grpvar]]==lvl], na.rm=TRUE), d=d), 
                                                                                  paste0(" (", paste(rnd(quantile(df[[sumvar]][df[[grpvar]]==lvl], 
-                                                                                                                 c(.25, .75)), 
+                                                                                                                 c(.25, .75), na.rm=TRUE), 
                                                                                                         d=d), 
                                                                                                     collapse=", "), ")")))))
         overall_ctr <- paste0(rnd(mean(df[[sumvar]], na.rm=TRUE), d=d), 
                               paste0(" (", paste(rnd(quantile(df[[sumvar]], 
-                                                              c(.25, .75)), 
+                                                              c(.25, .75), na.rm=TRUE), 
                                                      d=d), 
                                                  collapse=", "), ")"))
         method <- "Medians"
